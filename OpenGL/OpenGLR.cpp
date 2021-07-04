@@ -232,8 +232,6 @@ int main()
 		trans = glm::translate(trans, glm::vec3(0.0f, -0.0f, 0.0f));
 		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
 		
-		float camX = sin(glfwGetTime()) * radius;
-		float camZ = cos(glfwGetTime()) * radius;
 
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
@@ -241,10 +239,6 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture0);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture1);
 
 		testShader.use();
 		unsigned int modelLoc = glGetUniformLocation(testShader.ID, "model");
@@ -256,7 +250,7 @@ int main()
 
 		glBindVertexArray(VAO);
 		
-		for (unsigned int i = 0; i < 10; i++)
+		for (unsigned int i = 0; i < 2; i++)
 		{
 			glm::mat4 model = glm::mat4(1.0f);
 			model = glm::translate(model, cubePositions[i]);
