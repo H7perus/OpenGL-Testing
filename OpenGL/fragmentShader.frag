@@ -1,13 +1,10 @@
 #version 330 core
 out vec4 FragColor;
 
-in vec3 customColor;
-in vec2 TexCoord;
-
-uniform sampler2D albedo0;
-uniform sampler2D albedo1;
+uniform vec3 objectColor;
+uniform vec3 lightColor;
 
 void main()
 {
-   FragColor = mix(texture(albedo0, TexCoord), texture(albedo1, TexCoord), 0.2);
+   FragColor = vec4(lightColor * objectColor, 1.0);
 }
