@@ -21,7 +21,7 @@ glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-glm::vec3 lightPos(1.2f, 1.0f, -2.0f);
+glm::vec3 lightPos(1.2f, 0.3f, -2.0f);
 
 void processInput(GLFWwindow* window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -244,9 +244,16 @@ int main()
 
 		lightingShader.use();
 		lightingShader.setVec3("objectColor", 1.0, 0.8, 1.0);
-		lightingShader.setVec3("lightColor", 1.0, 0.8, 1.0);
-		lightingShader.setVec3("lightPos", lightPos);
 		lightingShader.setVec3("viewPos", cameraPos);
+		lightingShader.setVec3("material.ambient", 0.3, 0.3, 0.3);
+		lightingShader.setVec3("material.diffuse", 0.5, 0.5, 0.5);
+		lightingShader.setVec3("material.specular", 1.0, 1.0, 1.0);
+		lightingShader.setFloat("material.shininess", 64.0f);
+
+		lightingShader.setVec3("light.position", lightPos);
+		lightingShader.setVec3("light.ambient", 1.0, 1.0, 1.0);
+		lightingShader.setVec3("light.diffuse", 1.0, 1.0, 1.0);
+		lightingShader.setVec3("light.specular", 1.0, 1.0, 1.0);
 
 
 		glm::mat4 projection;
