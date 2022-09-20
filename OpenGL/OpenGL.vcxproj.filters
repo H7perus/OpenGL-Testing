@@ -32,12 +32,24 @@
     <ClInclude Include="stb_image.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="mesh.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="model.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="fragmentShader.frag">
       <Filter>Quelldateien</Filter>
     </None>
     <None Include="vertexShader.vert">
+      <Filter>Quelldateien</Filter>
+    </None>
+    <None Include="light_shader.frag">
+      <Filter>Quelldateien</Filter>
+    </None>
+    <None Include="debugShader.frag">
       <Filter>Quelldateien</Filter>
     </None>
   </ItemGroup>
