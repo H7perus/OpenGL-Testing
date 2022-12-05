@@ -40,5 +40,8 @@
     <None Include="vertexShader.vert">
       <Filter>Quelldateien</Filter>
     </None>
+    <None Include="light_shader.frag">
+      <Filter>Quelldateien</Filter>
+    </None>
   </ItemGroup>
 </Project>
