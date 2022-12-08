@@ -40,10 +40,11 @@ struct spotLight {
 };
 
 uniform Material material;
-uniform pointLight light;
 
-uniform sampler2D albedo;
-uniform sampler2D specular;
+#define NR_POINT_LIGHTS 2  
+uniform pointLight pointLights[NR_POINT_LIGHTS];
+
+
 
 vec3 calcPointLight(pointLight light)
 {
@@ -62,7 +63,7 @@ vec3 calcPointLight(pointLight light)
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 	vec3 specular = vec3(texture(material.specular, TexCoords)) * spec * light.specular;
 	//return vec3(1.0);
-	return specular;//(ambient + diffuse + specular);// * (1 / ( 1 + pow((distance(FragPos, light.position)), 2)));
+	return (ambient + diffuse + specular) * (1 / ( 1 + pow((distance(FragPos, light.position)), 2)));
 }
 vec3 calcSpotLight(spotLight light)
 {
@@ -73,7 +74,7 @@ vec3 calcSpotLight(spotLight light)
 	if(theta > light.cone)
 	{
 	//ambient lighting
-		ambient = vec3(texture(albedo, TexCoords)) * light.ambient;
+		ambient = vec3(texture(material.diffuse, TexCoords)) * light.ambient;
 		//specular lighting
 		vec3 norm = normalize(Normal);
 		vec3 lightDir = normalize(light.position - FragPos);
@@ -91,7 +92,12 @@ vec3 calcSpotLight(spotLight light)
 
 void main()
 {
-	vec3 result = calcPointLight(light);
+	vec3 result;
+	for(int i = 0; i < NR_POINT_LIGHTS; i++)
+	{
+		result += calcPointLight(pointLights[i]);
+	}
+	 
 	FragColor = vec4(result, 1.0);
 	//FragColor = vec4(1.0);
 	//FragColor = mix(texture(albedo, TexCoords), texture(specular, TexCoords), 0.5);

@@ -234,8 +234,8 @@ int main()
 	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
 
-	const float radius = 10.0f;
-	
+	float radius = 2.0f;
+	glm::vec3 lights[2];
 
 	glm::mat4 view;
 
@@ -254,15 +254,6 @@ int main()
 		trans = glm::translate(trans, glm::vec3(0.0f, -0.0f, 0.0f));
 		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
 		testShader.use();
-
-		float lightX = sin(glfwGetTime() * 0.5) * radius;
-		float lightZ = cos(glfwGetTime() * 0.5) * radius;
-		testShader.setVec3("light.position", glm::vec3(lightX, lightZ, 0));
-		testShader.setVec3("light.ambient", glm::vec3(0.8, 0.8, 0.8));
-		testShader.setVec3("light.diffuse", glm::vec3(0.8, 0.8, 0.8));
-		testShader.setVec3("light.specular", glm::vec3(0.8, 0.8, 0.8));
-		testShader.setFloat("material.shininess", 64.0f);
-
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 		glClearColor(0.2f, 0.0f, 0.0f, 1.0f);
@@ -274,18 +265,42 @@ int main()
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 
-		
 		unsigned int modelLoc = glGetUniformLocation(testShader.ID, "model");
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 		unsigned int viewLoc = glGetUniformLocation(testShader.ID, "view");
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 		unsigned int projectionLoc = glGetUniformLocation(testShader.ID, "projection");
 		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-		lightShader.setMat4("view", view);
-		lightShader.setMat4("projection", projection);
+		
 
 		glBindVertexArray(VAO);
 
+		lightShader.use();
+
+		lightShader.setMat4("view", view);
+		lightShader.setMat4("projection", projection);
+		for (int i = 0; i < 2; i++)
+		{
+			lights[i] = glm::vec3(sin(glfwGetTime() * 0.5 + i) * radius, 0, cos(glfwGetTime() * 0.5 + i) * radius);
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), lights[i]);
+			model = glm::scale(model, glm::vec3(0.2));
+
+			lightShader.setMat4("model", model);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			
+		}
+		testShader.use();
+		testShader.setVec3("pointLights[0].position", lights[0]);
+		testShader.setVec3("pointLights[0].ambient", glm::vec3(0.0, 0.0, 0.0));
+		testShader.setVec3("pointLights[0].diffuse", glm::vec3(0.8, 0.8, 0.8));
+		testShader.setVec3("pointLights[0].specular", glm::vec3(0.8, 0.8, 0.8));
+		testShader.setVec3("pointLights[1].position", lights[1]);
+		testShader.setVec3("pointLights[1].ambient", glm::vec3(0.0, 0.0, 0.0));
+		testShader.setVec3("pointLights[1].diffuse", glm::vec3(0.8, 0.8, 0.8));
+		testShader.setVec3("pointLights[1].specular", glm::vec3(0.8, 0.8, 0.8));
+		
+		testShader.setVec3("viewPos", cameraPos);
+		testShader.setFloat("material.shininess", 64.0f);
 		for (unsigned int i = 0; i < 10; i++)
 		{
 			glm::mat4 model = glm::mat4(1.0f);
@@ -295,10 +310,7 @@ int main()
 			testShader.setMat4("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
-		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1, 0, 0));
-		lightShader.use();
-		lightShader.setMat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+
 
 
 
