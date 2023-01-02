@@ -111,6 +111,8 @@ vec3 calcDirLight(dirLight light)
 	return (ambient + diffuse + specular);
 }
 
+uniform sampler2D albedo0;
+uniform sampler2D albedo1;
 
 void main()
 {
