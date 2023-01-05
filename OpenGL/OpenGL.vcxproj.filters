@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Quelldateien\shaders">
+      <UniqueIdentifier>{4e07cd16-bcf7-43c0-93c4-46441cbfcf9b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpenGLR.cpp">
@@ -22,6 +25,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="stb.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="physicsObject.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,19 +44,34 @@
     <ClInclude Include="model.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="physicsObject.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="fragmentShader.frag">
-      <Filter>Quelldateien</Filter>
+    <None Include="debugShader.frag">
+      <Filter>Quelldateien\shaders</Filter>
     </None>
-    <None Include="vertexShader.vert">
-      <Filter>Quelldateien</Filter>
+    <None Include="fragmentShader.frag">
+      <Filter>Quelldateien\shaders</Filter>
     </None>
     <None Include="light_shader.frag">
-      <Filter>Quelldateien</Filter>
+      <Filter>Quelldateien\shaders</Filter>
     </None>
-    <None Include="debugShader.frag">
-      <Filter>Quelldateien</Filter>
+    <None Include="lightDepthShader.vert">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="vertexShader.vert">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="empty.frag">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="debugPlaneShader.frag">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="debugPlaneShader.vert">
+      <Filter>Quelldateien\shaders</Filter>
     </None>
   </ItemGroup>
 </Project>
