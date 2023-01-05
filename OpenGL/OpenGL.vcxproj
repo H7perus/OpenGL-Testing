@@ -162,16 +162,22 @@
   <ItemGroup>
     <ClCompile Include="..\Dependencies\src\glad.c" />
     <ClCompile Include="OpenGLR.cpp" />
+    <ClCompile Include="physicsObject.cpp" />
     <ClCompile Include="stb.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="model.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="physicsObject.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="debugPlaneShader.frag" />
+    <None Include="debugPlaneShader.vert" />
     <None Include="debugShader.frag" />
+    <None Include="empty.frag" />
+    <None Include="lightDepthShader.vert" />
     <None Include="light_shader.frag" />
     <None Include="vertexShader.vert">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>

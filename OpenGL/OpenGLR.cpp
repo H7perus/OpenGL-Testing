@@ -37,7 +37,9 @@ void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
+unsigned int planeVAO;
 
+void renderQuad();
 
 int main()
 {
@@ -50,6 +52,10 @@ int main()
 	 0.5f,  0.5f, 0.0f, 0.0, 0.0, 0.5,  1.0f, 1.0f,
 	-0.5f,  0.5f, 0.0f, 0.5, 0.5, 0.0,  0.0f, 1.0f
 	};*/
+
+	// plane VAO
+	
+
 	float vertices[] = {
 		// positions          // normals           // texture coords
 		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
@@ -137,8 +143,8 @@ int main()
 	Shader testShader("vertexShader.vert", "debugShader.frag");
 	Shader testShader2("vertexShader.vert", "fragmentShader.frag");
 	Shader lightShader("vertexShader.vert", "light_shader.frag");
-
-
+	Shader planeShader("debugPlaneShader.vert", "debugPlaneShader.frag");
+	Shader shadowShader("lightDepthShader.vert", "empty.frag");
 
 	unsigned int VBO, VAO;
 	glGenBuffers(1, &VBO);
@@ -196,17 +202,90 @@ int main()
 	
 	std::cout << ourModel.meshes.size() << std::endl;
 
+	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	unsigned int depthMapFBO;
+	glGenFramebuffers(1, &depthMapFBO);
+
+	unsigned int depthMap;
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	planeShader.use();
+	planeShader.setInt("depthMap", 0);
+
+	glm::vec3 lightPos(15.0f, 15.0f, 15.0f);
+	testShader2.use();
+	testShader2.setVec3("sun.ambient", glm::vec3(0.1, 0.1, 0.1));
+	testShader2.setVec3("sun.diffuse", glm::vec3(0.8, 0.8, 0.8));
+	testShader2.setVec3("sun.specular", glm::vec3(1.5, 1.8, 1.8));
+	testShader2.setVec3("sun.direction", glm::vec3(1.0, 1.0, 1.0));
+	testShader2.setFloat("material.shininess", 128.0f);
+	testShader2.setInt("shadowMap", 2);
+	testShader.use();
+	testShader.setVec3("sun.ambient", glm::vec3(0.1, 0.1, 0.1));
+	testShader.setVec3("sun.diffuse", glm::vec3(0.5, 0.48, 0.45));
+	testShader.setVec3("sun.specular", glm::vec3(0.5, 0.48, 0.45));
+	testShader.setVec3("sun.direction", glm::vec3(1.0, 1.0, 1.0));
+	testShader.setFloat("material.shininess", 64.0f);
+	testShader.setInt("shadowMap", 2);
+	//glEnable(GL_CULL_FACE);
+
 	while (!glfwWindowShouldClose(window))
 	{
-		float currentFrame = glfwGetTime();
+
+		processInput(window);
+		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-		processInput(window);
+		
+		//configure shadow rendering ======================================
+		glm::mat4 lightProjection, lightView;
+		glm::mat4 lightSpaceMatrix;
+		float near_plane = 13.0f, far_plane = 50.0f;
+		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::normalize(glm::vec3(-0.0, 1.0, -0.0)));
+		lightSpaceMatrix = lightProjection * lightView;
+		model = glm::mat4(1.0f);
 
+		// render scene from light's point of view =========================================
+		shadowShader.use();
+		shadowShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
+		shadowShader.setMat4("model", model);
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		//glCullFace(GL_FRONT_AND_BACK);
+		floor.Draw(shadowShader);
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(0.0f, -0.31f, 0.0f));
+		model = glm::rotate(model, glm::radians(-15.0f), glm::vec3(1.0, 0.0, 0.0));
+		shadowShader.setMat4("model", model);
+		ourModel.Draw(shadowShader);
+		//glCullFace(GL_BACK);
+		//render the rest ==========================================
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, 1600, 900);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
 		glm::mat4 trans = glm::mat4(1.0f);
 		trans = glm::translate(trans, glm::vec3(0.0f, -0.0f, 0.0f));
 		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
 		testShader.use();
+		testShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 		glClearColor(0.2f, 0.0f, 0.0f, 1.0f);
@@ -218,76 +297,50 @@ int main()
 		testShader.setMat4("view", view);
 		
 
-
+		
 		glBindVertexArray(VAO);
-
+		
 		lightShader.use();
 
 		lightShader.setMat4("view", view);
 		lightShader.setMat4("projection", projection);
-		for (int i = 0; i < 2; i++)
-		{
-			lights[i] = glm::vec3(sin(glfwGetTime() * 0.5 + i) * radius, 0, cos(glfwGetTime() * 0.5 + i) * radius);
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), lights[i]);
-			model = glm::scale(model, glm::vec3(0.2));
-
-			lightShader.setMat4("model", model);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
-		testShader.use();
-		testShader.setVec3("pointLights[0].position", lights[0]);
-		testShader.setVec3("pointLights[0].ambient", glm::vec3(0.5, 0.5, 0.5));
-		testShader.setVec3("pointLights[0].diffuse", glm::vec3(0.5, 0.5, 0.5));
-		testShader.setVec3("pointLights[0].specular", glm::vec3(0.8, 0.8, 0.8));
-		testShader.setVec3("pointLights[1].position", lights[1]);
-		testShader.setVec3("pointLights[1].ambient", glm::vec3(0.5, 0.5, 0.5));
-		testShader.setVec3("pointLights[1].diffuse", glm::vec3(0.8, 0.8, 0.8));
-		testShader.setVec3("pointLights[1].specular", glm::vec3(0.8, 0.8, 0.8));
-		testShader.setVec3("sun.ambient", glm::vec3(0.1, 0.1, 0.1));
-		testShader.setVec3("sun.diffuse", glm::vec3(0.5, 0.48, 0.45));
-		testShader.setVec3("sun.specular", glm::vec3(0.5, 0.48, 0.45));
-		testShader.setVec3("sun.direction", glm::vec3(1.0, 1.0, 1.0));
+		testShader2.use();
+		testShader2.setVec3("pointLights[0].position", lights[0]);
+		testShader2.setVec3("pointLights[1].position", lights[1]);
+		testShader2.setVec3("viewPos", cameraPos);
 		
-		testShader.setVec3("viewPos", cameraPos);
-		testShader.setFloat("material.shininess", 64.0f);
-		//for (unsigned int i = 0; i < 10; i++)
-		//{
-		//	glm::mat4 model = glm::mat4(1.0f);
-		//	model = glm::translate(model, cubePositions[i]);
-		//	float angle = 20.0f * i;
-		//	model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0, 0.3, 0.4f));
-		//	testShader.setMat4("model", model);
-		//	ourModel.Draw(testShader);
-		//	//glDrawArrays(GL_TRIANGLES, 0, 36);
-		//}
-
-		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::mat4(1.0f);
+		model = glm::rotate(model, glm::radians(-15.0f), glm::vec3(1.0, 0.0, 0.0));
+		model = glm::translate(model, glm::vec3(0.0, -0.31, 0.0));
 		testShader.setMat4("model", model);
-		ourModel.Draw(testShader);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
 
+		ourModel.Draw(testShader2);
+		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
 		testShader2.use();
 		testShader2.setVec3("pointLights[0].position", lights[0]);
-		testShader2.setVec3("pointLights[0].ambient", glm::vec3(0.5, 0.5, 0.5));
-		testShader2.setVec3("pointLights[0].diffuse", glm::vec3(0.5, 0.5, 0.5));
-		testShader2.setVec3("pointLights[0].specular", glm::vec3(0.8, 0.8, 0.8));
 		testShader2.setVec3("pointLights[1].position", lights[1]);
-		testShader2.setVec3("pointLights[1].ambient", glm::vec3(0.5, 0.5, 0.5));
-		testShader2.setVec3("pointLights[1].diffuse", glm::vec3(0.8, 0.8, 0.8));
-		testShader2.setVec3("pointLights[1].specular", glm::vec3(1.5, 1.8, 1.8));
-
-		testShader2.setVec3("sun.ambient", glm::vec3(0.5, 0.5, 0.5));
-		testShader2.setVec3("sun.diffuse", glm::vec3(0.8, 0.8, 0.8));
-		testShader2.setVec3("sun.specular", glm::vec3(1.5, 1.8, 1.8));
-		testShader2.setVec3("sun.direction", glm::vec3(1.0, 1.0, 1.0));
-
 		testShader2.setVec3("viewPos", cameraPos);
-		testShader2.setFloat("material.shininess", 128.0f);
 		testShader2.setMat4("model", model);
 		testShader2.setMat4("projection", projection);
 		testShader2.setMat4("view", view);
+		testShader2.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 		floor.Draw(testShader2);
-
+		planeShader.use();
+		////planeShader.setInt("depthMap", 0);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, depthMap);
+		//model = glm::mat4(1.0);
+		//projection = glm::mat4(1.0);
+		//view = glm::mat4(1.0);
+		//planeShader.setMat4("model", model);
+		//planeShader.setMat4("projection", projection);
+		//planeShader.setMat4("view", view);
+		//planeShader.setFloat("near_plane", near_plane);
+		//planeShader.setFloat("far_plane", far_plane);
+		////renderQuad();
 
 
 		glfwSwapBuffers(window);
@@ -348,4 +401,32 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+}
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+	if (quadVAO == 0)
+	{
+		float quadVertices[] = {
+			// positions        // texture Coords
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// setup plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
 }
