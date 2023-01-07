@@ -16,6 +16,9 @@
     <Filter Include="Quelldateien\shaders">
       <UniqueIdentifier>{4e07cd16-bcf7-43c0-93c4-46441cbfcf9b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Quelldateien\imgui">
+      <UniqueIdentifier>{e95b8e19-6810-481f-b487-33125e315891}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpenGLR.cpp">
@@ -29,6 +32,27 @@
     </ClCompile>
     <ClCompile Include="physicsObject.cpp">
       <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\backends\imgui_impl_glfw.cpp">
+      <Filter>Quelldateien\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\backends\imgui_impl_opengl3.cpp">
+      <Filter>Quelldateien\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui.cpp">
+      <Filter>Quelldateien\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_demo.cpp">
+      <Filter>Quelldateien\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_draw.cpp">
+      <Filter>Quelldateien\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_tables.cpp">
+      <Filter>Quelldateien\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_widgets.cpp">
+      <Filter>Quelldateien\imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

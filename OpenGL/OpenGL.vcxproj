@@ -148,7 +148,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\include;%(AdditionalIncludeDirectories);$(SolutionDir)Dependencies\include\imgui-1.89.1</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -160,6 +160,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui.cpp" />
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_demo.cpp" />
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_draw.cpp" />
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_tables.cpp" />
+    <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_widgets.cpp" />
     <ClCompile Include="..\Dependencies\src\glad.c" />
     <ClCompile Include="OpenGLR.cpp" />
     <ClCompile Include="physicsObject.cpp" />

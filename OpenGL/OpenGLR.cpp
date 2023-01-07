@@ -16,6 +16,10 @@
 #include "model.h"
 
 #include "stb_image.h"
+#include "physicsObject.h"
+#include "imgui-1.89.1/imgui.h"
+#include "imgui-1.89.1/backends/imgui_impl_opengl3.h"
+#include "imgui-1.89.1/backends/imgui_impl_glfw.h"
 
 const float cameraSpeedMulti = 2.5f;
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -31,7 +35,8 @@ float fov = 45.0f;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-
+bool prevTabbed = false;
+bool guiEnabled = true;
 
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -40,6 +45,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 unsigned int planeVAO;
 
 void renderQuad();
+ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 int main()
 {
@@ -119,6 +125,7 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+	IMGUI_CHECKVERSION();
 
 	GLFWwindow* window = glfwCreateWindow(1600, 900, "OpenGLR", NULL, NULL);
 	if (window == NULL)
@@ -129,8 +136,17 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	// Setup Platform/Renderer bindings
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 130");
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -163,28 +179,13 @@ int main()
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	testShader.use();
-	/*testShader.setInt("material.diffuse", 0);
-	testShader.setInt("material.specular", 1);*/
-
-	//transform matrix
-	//glm::mat4 trans = glm::mat4(1.0f);
-	//trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0)); 
-	//trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
-
-	//unsigned int transformLoc = glGetUniformLocation(testShader.ID, "transform");
-	//glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans)); 
 
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-
 	glm::mat4 projection;
 	projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
-
-
 	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
-
 	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
 
@@ -197,12 +198,12 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-	Model ourModel("../assets/Fw190A5.obj");
+	Model ourModel("../assets/cube.obj");
 	Model floor("../assets/floor.obj");
 	
 	std::cout << ourModel.meshes.size() << std::endl;
 
-	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	const unsigned int SHADOW_WIDTH = 1024 * 8, SHADOW_HEIGHT = 1024 * 8;
 	unsigned int depthMapFBO;
 	glGenFramebuffers(1, &depthMapFBO);
 
@@ -240,10 +241,29 @@ int main()
 	testShader.setVec3("sun.direction", glm::vec3(1.0, 1.0, 1.0));
 	testShader.setFloat("material.shininess", 64.0f);
 	testShader.setInt("shadowMap", 2);
+
+	glfwSwapInterval(1);
 	//glEnable(GL_CULL_FACE);
+	float sliderval = -15.0;
+	glm::vec3 plane_pos = glm::vec3(0.0f, -0.31f, 0.0f);
 
 	while (!glfwWindowShouldClose(window))
 	{
+
+
+
+		glfwPollEvents();
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		ImGui::Begin("Demo window");
+		
+		ImGui::DragFloat("X rotation", &sliderval, 0.05f, -90.0f, 90.0f);
+		ImGui::DragFloat("X position", &plane_pos.x, 0.05f);
+		ImGui::DragFloat("Y position", &plane_pos.y, 0.05f);
+		ImGui::DragFloat("Z position", &plane_pos.z, 0.05f);
+		ImGui::End();
+		ImGui::Render();
 
 		processInput(window);
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -254,7 +274,7 @@ int main()
 		glm::mat4 lightProjection, lightView;
 		glm::mat4 lightSpaceMatrix;
 		float near_plane = 13.0f, far_plane = 50.0f;
-		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+		lightProjection = glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, near_plane, far_plane);
 		lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::normalize(glm::vec3(-0.0, 1.0, -0.0)));
 		lightSpaceMatrix = lightProjection * lightView;
 		model = glm::mat4(1.0f);
@@ -269,10 +289,10 @@ int main()
 		glClear(GL_DEPTH_BUFFER_BIT);
 		//glCullFace(GL_FRONT_AND_BACK);
 		floor.Draw(shadowShader);
-		model = glm::mat4(1.0);
-		model = glm::translate(model, glm::vec3(0.0f, -0.31f, 0.0f));
-		model = glm::rotate(model, glm::radians(-15.0f), glm::vec3(1.0, 0.0, 0.0));
-		shadowShader.setMat4("model", model);
+		glm::mat4 plane_modelmat = glm::mat4(1.0);
+		plane_modelmat = glm::translate(plane_modelmat, plane_pos);
+		plane_modelmat = glm::rotate(plane_modelmat, glm::radians(sliderval), glm::vec3(1.0, 0.0, 0.0));
+		shadowShader.setMat4("model", plane_modelmat);
 		ourModel.Draw(shadowShader);
 		//glCullFace(GL_BACK);
 		//render the rest ==========================================
@@ -299,24 +319,17 @@ int main()
 
 		
 		glBindVertexArray(VAO);
-		
-		lightShader.use();
 
-		lightShader.setMat4("view", view);
-		lightShader.setMat4("projection", projection);
 		testShader2.use();
 		testShader2.setVec3("pointLights[0].position", lights[0]);
 		testShader2.setVec3("pointLights[1].position", lights[1]);
 		testShader2.setVec3("viewPos", cameraPos);
-		
-		model = glm::mat4(1.0f);
-		model = glm::rotate(model, glm::radians(-15.0f), glm::vec3(1.0, 0.0, 0.0));
-		model = glm::translate(model, glm::vec3(0.0, -0.31, 0.0));
-		testShader.setMat4("model", model);
+
+		testShader2.setMat4("model", plane_modelmat);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-
 		ourModel.Draw(testShader2);
+
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
 		testShader2.use();
@@ -328,7 +341,8 @@ int main()
 		testShader2.setMat4("view", view);
 		testShader2.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 		floor.Draw(testShader2);
-		planeShader.use();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		//planeShader.use();
 		////planeShader.setInt("depthMap", 0);
 		//glActiveTexture(GL_TEXTURE0);
 		//glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -344,9 +358,11 @@ int main()
 
 
 		glfwSwapBuffers(window);
-		glfwPollEvents();
 	}
 	glfwTerminate();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 	return 0;
 }
 
@@ -361,6 +377,26 @@ void processInput(GLFWwindow* window)
 		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) 
+	{
+		if (!prevTabbed)
+			if (guiEnabled)
+			{
+				glfwSetCursorPosCallback(window, mouse_callback);
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				guiEnabled = false;
+			}
+			else
+			{
+				glfwSetCursorPosCallback(window, NULL);
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				
+				guiEnabled = true;
+			}
+		prevTabbed = true;
+	}
+	else
+		prevTabbed = false;
 }
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
