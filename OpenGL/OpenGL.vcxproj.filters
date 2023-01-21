@@ -19,6 +19,9 @@
     <Filter Include="Quelldateien\imgui">
       <UniqueIdentifier>{e95b8e19-6810-481f-b487-33125e315891}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Quelldateien\physics">
+      <UniqueIdentifier>{4cd8cf25-7405-42a1-ab04-e79572b3ad66}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpenGLR.cpp">
@@ -28,9 +31,6 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="stb.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="physicsObject.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\Dependencies\include\imgui-1.89.1\backends\imgui_impl_glfw.cpp">
@@ -54,6 +54,15 @@
     <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_widgets.cpp">
       <Filter>Quelldateien\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="LinearSpring.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btManifoldResult.cpp">
+      <Filter>Quelldateien\physics</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btInternalEdgeUtility.cpp">
+      <Filter>Quelldateien\physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -69,6 +78,15 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="physicsObject.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="LinearSpring.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="flightModel.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="debugdraw.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
@@ -95,6 +113,12 @@
       <Filter>Quelldateien\shaders</Filter>
     </None>
     <None Include="debugPlaneShader.vert">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="physicsdebug.frag">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="physicsdebug.vert">
       <Filter>Quelldateien\shaders</Filter>
     </None>
   </ItemGroup>
