@@ -21,7 +21,16 @@
 #include "imgui-1.89.1/backends/imgui_impl_opengl3.h"
 #include "imgui-1.89.1/backends/imgui_impl_glfw.h"
 
-const float cameraSpeedMulti = 2.5f;
+#include "Bullet3.24/btBulletDynamicsCommon.h"
+#include "Bullet3.24/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+#include "Bullet3.24/BulletCollision/CollisionDispatch/btInternalEdgeUtility.h"
+#include "Bullet3.24/BulletCollision/CollisionShapes/btTriangleShape.h"
+#include "debugdraw.h"
+
+#include "LinearSpring.h"
+#include "flightModel.h"
+
+const float cameraSpeedMulti = 8.5f;
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -38,20 +47,49 @@ float lastFrame = 0.0f;
 bool prevTabbed = false;
 bool guiEnabled = true;
 
+int control_input_elev;
+int control_input_ail;
+
+
 void processInput(GLFWwindow* window);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+static bool collisionCallback(btManifoldPoint& cp, const btCollisionObjectWrapper* obj1, int id1, int index1, const btCollisionObjectWrapper* obj2, int id2, int index2);
+//extern ContactAddedCallback gContactAddedCallback;
+
+
+
 
 unsigned int planeVAO;
 
+
+
 void renderQuad();
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+glm::mat4 array2mat4(const float* array) {     // OpenGL row major
+
+	glm::mat4 matrix;
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			matrix[i][j] = array[i + j];
+		}
+	}
+
+	return matrix;
+}
+glm::mat4 btScalar2mat4(btScalar* matrix) {
+	return glm::mat4(
+		matrix[0], matrix[1], matrix[2], matrix[3],
+		matrix[4], matrix[5], matrix[6], matrix[7],
+		matrix[8], matrix[9], matrix[10], matrix[11],
+		matrix[12], matrix[13], matrix[14], matrix[15]);
+}
 
 int main()
 {
-
-
-
+	
+	//debugDrawer.lineShader = Shader("physicsdebug.vert", "physicsdebug.frag");
 	/*float vertices[] = {
 	-0.5f, -0.5f, 0.0f, 0.5, 0.0, 0.0,  0.0f, 0.0f,
 	 0.5f, -0.5f, 0.0f, 0.0, 0.5, 0.0,  1.0f, 0.0f,
@@ -125,7 +163,6 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	IMGUI_CHECKVERSION();
 
 	GLFWwindow* window = glfwCreateWindow(1600, 900, "OpenGLR", NULL, NULL);
 	if (window == NULL)
@@ -139,14 +176,7 @@ int main()
 	
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	// Setup Platform/Renderer bindings
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init("#version 130");
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
+	
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -161,6 +191,7 @@ int main()
 	Shader lightShader("vertexShader.vert", "light_shader.frag");
 	Shader planeShader("debugPlaneShader.vert", "debugPlaneShader.frag");
 	Shader shadowShader("lightDepthShader.vert", "empty.frag");
+	BulletDebugDrawer_OpenGL debugDrawer;
 
 	unsigned int VBO, VAO;
 	glGenBuffers(1, &VBO);
@@ -198,7 +229,8 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-	Model ourModel("../assets/cube.obj");
+	Model cube("../assets/cylinder.obj");
+	Model ourModel("../assets/Fw190A5.obj");
 	Model floor("../assets/floor.obj");
 	
 	std::cout << ourModel.meshes.size() << std::endl;
@@ -242,33 +274,385 @@ int main()
 	testShader.setFloat("material.shininess", 64.0f);
 	testShader.setInt("shadowMap", 2);
 
-	glfwSwapInterval(1);
+	
 	//glEnable(GL_CULL_FACE);
 	float sliderval = -15.0;
 	glm::vec3 plane_pos = glm::vec3(0.0f, -0.31f, 0.0f);
 
+	///collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
+	btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration();
+	///use the default collision dispatcher. For parallel processing you can use a diffent dispatcher (see Extras/BulletMultiThreaded)
+	btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfiguration);
+	///btDbvtBroadphase is a good general purpose broadphase. You can also try out btAxis3Sweep.
+	btBroadphaseInterface* overlappingPairCache = new btDbvtBroadphase();
+	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
+	btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
+	btDiscreteDynamicsWorld* dynamicsWorld = new  btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+	dynamicsWorld->setGravity(btVector3(0, -10, 0));
+	btAlignedObjectArray<btCollisionShape*> collisionShapes;
+	btRigidBody* body1;
+	btRigidBody* body2;
+	btRigidBody* body3;
+	btRigidBody* body4;
+	btRigidBody* body5;
+
+
+	double testheight[100 * 100];
+
+	for (int i = 0; i < 100 * 100; i++)
+	{
+		testheight[i] = 0; //float(i % 3);
+	}
+
+
+
+	/*for (int i = 0; i < 100; i++)
+	{
+		for (int j = 0; j < 100; j++)
+		{
+			testheight[i * 100 + j] = 0.08 * i - 2.0f;
+		}
+	}*/
+
+	int intheight[100 * 100];
+
+	for (int i = 0; i < 100 * 100; i++)
+	{
+		intheight[i] = float(i % 2);
+	}
+
+
+	void* testp = &testheight;
+
+	//btHeightfieldTerrainShape* terr = new btHeightfieldTerrainShape(10, 10, testp, 10, 1, true, false);
+	gContactAddedCallback = &collisionCallback;
+	{
+		//btCollisionShape* groundShape = new btBoxShape(btVector3(btScalar(100.), btScalar(50.), btScalar(100.)));
+		
+		btHeightfieldTerrainShape* terrainshape = new btHeightfieldTerrainShape(20, 30, &testheight, btScalar(10), 1, true, true);
+
+		//btStaticPlaneShape* terrainshape = new btStaticPlaneShape(btVector3(0, 1, 0), -2);
+		//btTriangleMeshShape* trishape = new btTriangleMeshShape();
+
+		btTriangleInfoMap* triangleInfoMap = new btTriangleInfoMap();
+		btGenerateInternalEdgeInfo(terrainshape, triangleInfoMap);
+		terrainshape->setTriangleInfoMap(triangleInfoMap);
+
+		btCollisionShape* groundShape = terrainshape;
+		collisionShapes.push_back(terrainshape);
+
+		btTransform groundTransform;
+		groundTransform.setIdentity();
+		groundTransform.setOrigin(btVector3(0, -52, 0));
+		groundTransform.setOrigin(btVector3(0, 3, -10));
+
+		btScalar mass(0.);
+
+		btVector3 localInertia(0, 0, 0);
+		if (mass != 0.f)
+			groundShape->calculateLocalInertia(mass, localInertia);
+
+		//using motionstate is optional, it provides interpolation capabilities, and only synchronizes 'active' objects
+		btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, terrainshape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+		//body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+
+		//add the body to the dynamics world
+		dynamicsWorld->addRigidBody(body);
+	}
+	dynamicsWorld->setDebugDrawer(&debugDrawer);
+
+	btTransform startTransform;
+	startTransform.setIdentity();
+	startTransform.setOrigin(btVector3(0, 4, -15));
+
+	btQuaternion planerotate;
+	planerotate.setEuler(btRadians(0), 0, 0);
+
+	startTransform.setRotation(planerotate);
+	btQuaternion quat;
+	quat.setEuler(glm::radians(0.0), glm::radians(0.0), glm::radians(90.0));
+	//startTransform.setRotation(quat);
+	btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
+	
+
+	btTransform startTransform2;
+	startTransform2.setIdentity();
+	startTransform2.setOrigin(btVector3(0, 3, -15));
+	btDefaultMotionState* myMotionState2 = new btDefaultMotionState(startTransform2);
+	btDefaultMotionState* myMotionState3 = new btDefaultMotionState(startTransform2);
+	startTransform2.setOrigin(btVector3(0, 0, 0));
+	btDefaultMotionState* myMotionState4 = new btDefaultMotionState(startTransform2);
+	btDefaultMotionState* myMotionState5 = new btDefaultMotionState(startTransform2);
+
+	//PLANE BOX
+	{
+		//create a dynamic rigidbody
+
+		btCollisionShape* colShape1 = new btBoxShape(btVector3(5.3, 0.6, 4.6));
+		btCompoundShape* colShape = new btCompoundShape();
+		btTransform cTransform;
+		cTransform.setIdentity();
+		cTransform.setOrigin(btVector3(0, 0, -2.6));
+		colShape->addChildShape(cTransform, colShape1);
+		//btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+		collisionShapes.push_back(colShape);
+		btScalar mass(3500.f);
+		btVector3 localInertia(0, 0, 0);
+		if (mass != 0.f)
+			colShape->calculateLocalInertia(mass, localInertia);
+
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+		dynamicsWorld->addRigidBody(body);
+		body1 = body;
+	}
+	
+	////WHEELBOX R
+	glm::vec3 box_scale = glm::vec3(0.72, 0.72, 0.72);
+	{
+		btCollisionShape* colShape = new btBoxShape(btVector3(box_scale.x / 4, box_scale.y / 4, box_scale.z / 4));
+		collisionShapes.push_back(colShape);
+		btScalar mass(80.f);
+		btVector3 localInertia(0, 0, 0);
+		if (mass != 0.f)
+			colShape->calculateLocalInertia(mass, localInertia);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState2, colShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+		//body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+		dynamicsWorld->addRigidBody(body);
+		body2 = body;
+	}
+	//WHEELBOX L
+	{
+		btCollisionShape* colShape = new btBoxShape(btVector3(box_scale.x / 4, box_scale.y / 4, box_scale.z / 4));
+		//btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+		collisionShapes.push_back(colShape);
+
+		btScalar mass(80.f);
+		btVector3 localInertia(0, 0, 0);
+		if (mass != 0)
+			colShape->calculateLocalInertia(mass, localInertia);
+
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState3, colShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+		//body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+		dynamicsWorld->addRigidBody(body);
+		body3 = body;
+	}
+
+	LinearSpring* basedconstraint = new LinearSpring(*body1, *body2, btVector3(-2.03033, -1.2981, 0.62), btVector3(-0.1, -0.6, 0), 120000, 5000, 12000);
+	LinearSpring* basedconstraint2 = new LinearSpring(*body1, *body3, btVector3(2.03033, -1.2981, 0.62), btVector3(0.1, -0.6, 0), 120000, 5000, 12000);
+
+	//basedconstraint->enableSpring(1, 0);
+	//basedconstraint2->enableSpring(1, 0);
+	/*basedconstraint->setLimit(0, 0, 0);
+	basedconstraint->setLimit(1, .7, .7);
+	basedconstraint->setLimit(2, 0, 0);
+	basedconstraint->setLimit(3, 0, 0);
+	basedconstraint->setLimit(4, 0, 0);
+	basedconstraint->setLimit(5, 0, 0);
+	basedconstraint2->setLimit(0, 0, 0);
+	basedconstraint2->setLimit(1, .7, .7);
+	basedconstraint2->setLimit(2, 0, 0);
+	basedconstraint2->setLimit(3, 0, 0);
+	basedconstraint2->setLimit(4, 0, 0);
+	basedconstraint2->setLimit(5, 0, 0);*/
+	
+	body1->setActivationState(DISABLE_DEACTIVATION);
+	//body2->setActivationState(DISABLE_DEACTIVATION);
+	//body3->setActivationState(DISABLE_DEACTIVATION);
+	
+	dynamicsWorld->addConstraint(basedconstraint, true);
+	dynamicsWorld->addConstraint(basedconstraint2, true);
+
+	//WHEEL R
+	{
+		//create a dynamic rigidbody
+
+		btCollisionShape* colShape = new btCylinderShape(btVector3(box_scale.x / 2, box_scale.y / 5, box_scale.z / 2));
+		//btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+		collisionShapes.push_back(colShape);
+
+		/// Create Dynamic Objects
+
+
+
+		btScalar mass(5.2f);
+
+		//rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool isDynamic = (mass != 0.f);
+
+		btVector3 localInertia(0, 0, 0);
+		if (isDynamic)
+			colShape->calculateLocalInertia(mass, localInertia);
+
+		
+
+
+		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState4, colShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+
+		dynamicsWorld->addRigidBody(body);
+		body4 = body;
+	}
+	//WHEEL L 
+	{
+		//create a dynamic rigidbody
+
+		btCollisionShape* colShape = new btCylinderShape(btVector3(box_scale.x / 2, box_scale.y / 5, box_scale.z / 2));
+		//btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+		collisionShapes.push_back(colShape);
+
+		/// Create Dynamic Objects
+
+
+
+		btScalar mass(5.2f);
+
+		//rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool isDynamic = (mass != 0.f);
+
+		btVector3 localInertia(0, 0, 0);
+		if (isDynamic)
+			colShape->calculateLocalInertia(mass, localInertia);
+
+
+
+
+		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState5, colShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+
+		dynamicsWorld->addRigidBody(body);
+		body5 = body;
+	}
+
+	startTransform.setIdentity();
+	startTransform2.setIdentity();
+
+	startTransform2.setRotation(quat);
+	btGeneric6DofSpring2Constraint* wheel1const = new btGeneric6DofSpring2Constraint(*body2, *body4, startTransform, startTransform2, RO_XYZ);
+
+	wheel1const->setLimit(0, 0, 0);
+	wheel1const->setLimit(1, 0, 0);
+	wheel1const->setLimit(2, 0, 0);
+	wheel1const->setLimit(3, 1, 0);
+	wheel1const->setLimit(4, 0, 0);
+	wheel1const->setLimit(5, 0, 0);
+	dynamicsWorld->addConstraint(wheel1const, true);
+
+	btGeneric6DofSpring2Constraint* wheel2const = new btGeneric6DofSpring2Constraint(*body3, *body5, startTransform, startTransform2, RO_XYZ);
+
+	
+	wheel2const->setMaxMotorForce(3, 1000000);
+	wheel2const->setLimit(0, 0, 0);
+	wheel2const->setLimit(1, 0, 0);
+	wheel2const->setLimit(2, 0, 0);
+	wheel2const->setLimit(3, 1, 0);
+	wheel2const->setLimit(4, 0, 0);
+	wheel2const->setLimit(5, 0, 0);
+	dynamicsWorld->addConstraint(wheel2const, true);
+	body5->setFriction(1000000);
+	body4->setFriction(1000000);
+
+
+
+
+	bool applyforce = false;
+	bool applyrotate = false;
+	//glfwSwapInterval(1);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	// Setup Platform/Renderer bindings
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 130");
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	
 	while (!glfwWindowShouldClose(window))
 	{
-
-
-
 		glfwPollEvents();
+		processInput(window);
+		float currentFrame = static_cast<float>(glfwGetTime());
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+		projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 10000.0f);
+		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
+
+		btTransform testTransform;
+		myMotionState->getWorldTransform(testTransform);
+		testTransform.getOrigin();
+		btVector3 camUp(0, 1, 0);
+		camUp = btCross(testTransform.getOrigin(), camUp);
+		camUp = btCross(camUp, testTransform.getOrigin());
+		glm::vec3 up(camUp.getX(), camUp.getY(), camUp.getZ());
+		//view = glm::lookAt(cameraPos, glm::vec3(testTransform.getOrigin().getX(), testTransform.getOrigin().getY(), testTransform.getOrigin().getZ()), up);
+
+		
+		
+		dynamicsWorld->stepSimulation(deltaTime, 100, 0.001);
+
+
+
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::Begin("Demo window");
 		
+		btTransform testTransform2;
+		testTransform2 = dynamicsWorld->getCollisionObjectArray().at(1)->getWorldTransform();
+		myMotionState->getWorldTransform(testTransform);
+		btScalar testarr[16];
+
+		testTransform.getOpenGLMatrix(testarr);
+
+		glm::mat4 plane_modelmat = btScalar2mat4(testarr) * glm::translate(glm::mat4(1.0), glm::vec3(0, 0, 2)); 
+		
+
 		ImGui::DragFloat("X rotation", &sliderval, 0.05f, -90.0f, 90.0f);
 		ImGui::DragFloat("X position", &plane_pos.x, 0.05f);
 		ImGui::DragFloat("Y position", &plane_pos.y, 0.05f);
 		ImGui::DragFloat("Z position", &plane_pos.z, 0.05f);
+		ImGui::Checkbox("apply force", &applyforce);
+		ImGui::Checkbox("apply rotate", &applyrotate);
 		ImGui::End();
 		ImGui::Render();
 
-		processInput(window);
-		float currentFrame = static_cast<float>(glfwGetTime());
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
+		applyFlightModel(*body1);
+
+		btVector3 torque(25000 * -control_input_elev, 0, 25000 * control_input_ail);
+		torque = body1->getWorldTransform().getBasis() * torque * body1->getLinearVelocity().length() * 0.1;
+		body1->applyTorque(torque);
+
+		if (applyforce) 
+		{
+			dynamicsWorld->getNonStaticRigidBodies().at(0)->activate();
+			btQuaternion quate = dynamicsWorld->getNonStaticRigidBodies().at(0)->getOrientation();
+			btMatrix3x3 basis = btMatrix3x3(quate);
+			btVector3 forward = basis.getColumn(2);
+			//dynamicsWorld->getNonStaticRigidBodies().at(0)->applyCentralForce(forward * 8000);
+			
+
+			//body1->applyCentralForce(btVector3(0, -75000, 0));
+			body1->applyCentralForce(btVector3(0, 0, 20000));
+			//dynamicsWorld->getNonStaticRigidBodies().at(0)->applyTorque(btVector3(8000, 0, 0));
+
+		}
+		if (applyrotate)
+		{
+			dynamicsWorld->getNonStaticRigidBodies().at(2)->activate();
+			dynamicsWorld->getNonStaticRigidBodies().at(2)->applyTorque(btVector3(0, 0, 5000));
+		}
 		
 		//configure shadow rendering ======================================
 		glm::mat4 lightProjection, lightView;
@@ -287,76 +671,68 @@ int main()
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		//glCullFace(GL_FRONT_AND_BACK);
+		glCullFace(GL_FRONT);
 		floor.Draw(shadowShader);
-		glm::mat4 plane_modelmat = glm::mat4(1.0);
-		plane_modelmat = glm::translate(plane_modelmat, plane_pos);
-		plane_modelmat = glm::rotate(plane_modelmat, glm::radians(sliderval), glm::vec3(1.0, 0.0, 0.0));
 		shadowShader.setMat4("model", plane_modelmat);
 		ourModel.Draw(shadowShader);
-		//glCullFace(GL_BACK);
+		glCullFace(GL_BACK);
 		//render the rest ==========================================
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, 1600, 900);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
+		
 		glm::mat4 trans = glm::mat4(1.0f);
 		trans = glm::translate(trans, glm::vec3(0.0f, -0.0f, 0.0f));
 		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
 		testShader.use();
 		testShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		
 
-		glClearColor(0.2f, 0.0f, 0.0f, 1.0f);
+		//glClearColor(0.6f, 0.6f, 0.8f, 1.0f);
+		glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		testShader.setMat4("model", model);
-		testShader.setMat4("projection", projection);
-		testShader.setMat4("view", view);
-		
-
-		
 		glBindVertexArray(VAO);
 
 		testShader2.use();
-		testShader2.setVec3("pointLights[0].position", lights[0]);
-		testShader2.setVec3("pointLights[1].position", lights[1]);
 		testShader2.setVec3("viewPos", cameraPos);
-
+		testShader2.setMat4("projection", projection);
+		testShader2.setMat4("view", view);
 		testShader2.setMat4("model", plane_modelmat);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		ourModel.Draw(testShader2);
 
+		myMotionState4->getWorldTransform(testTransform2);
+		testTransform2.getOpenGLMatrix(testarr);
+		plane_modelmat = btScalar2mat4(testarr);
+		plane_modelmat = glm::scale(plane_modelmat, glm::vec3(box_scale.x, box_scale.y / 5, box_scale.z));
+
+		testShader2.setMat4("model", plane_modelmat);
+
+		cube.Draw(testShader2);
+		myMotionState5->getWorldTransform(testTransform2);
+		testTransform2.getOpenGLMatrix(testarr);
+		plane_modelmat = btScalar2mat4(testarr);
+		plane_modelmat = glm::scale(plane_modelmat, glm::vec3(box_scale.x, box_scale.y / 5, box_scale.z));
+		testShader2.setMat4("model", plane_modelmat);
+		cube.Draw(testShader2);
+
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
 		testShader2.use();
-		testShader2.setVec3("pointLights[0].position", lights[0]);
-		testShader2.setVec3("pointLights[1].position", lights[1]);
 		testShader2.setVec3("viewPos", cameraPos);
 		testShader2.setMat4("model", model);
-		testShader2.setMat4("projection", projection);
-		testShader2.setMat4("view", view);
+		model = glm::mat4(1.0f);
 		testShader2.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-		floor.Draw(testShader2);
+		//floor.Draw(testShader2);
+		
+		debugDrawer.lineShader.use();
+		debugDrawer.SetMatrices(view, projection);
+		dynamicsWorld->debugDrawWorld();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		//planeShader.use();
-		////planeShader.setInt("depthMap", 0);
-		//glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_2D, depthMap);
-		//model = glm::mat4(1.0);
-		//projection = glm::mat4(1.0);
-		//view = glm::mat4(1.0);
-		//planeShader.setMat4("model", model);
-		//planeShader.setMat4("projection", projection);
-		//planeShader.setMat4("view", view);
-		//planeShader.setFloat("near_plane", near_plane);
-		//planeShader.setFloat("far_plane", far_plane);
-		////renderQuad();
-
-
 		glfwSwapBuffers(window);
 	}
 	glfwTerminate();
@@ -368,6 +744,17 @@ int main()
 
 void processInput(GLFWwindow* window)
 {
+	control_input_elev = 0;
+	control_input_ail = 0;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		control_input_elev -= 1;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		control_input_elev += 1;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		control_input_ail -= 1;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		control_input_ail += 1;
+
 	float cameraSpeed = cameraSpeedMulti * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		cameraPos += cameraSpeed * cameraFront;
@@ -382,13 +769,14 @@ void processInput(GLFWwindow* window)
 		if (!prevTabbed)
 			if (guiEnabled)
 			{
-				glfwSetCursorPosCallback(window, mouse_callback);
+				//glfwSetCursorPosCallback(window, mouse_callback);
+				//ImGui_ImplGlfw_CursorPosCallback(window, mouse_callback);
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				guiEnabled = false;
 			}
 			else
 			{
-				glfwSetCursorPosCallback(window, NULL);
+				//glfwSetCursorPosCallback(window, NULL);
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 				
 				guiEnabled = true;
@@ -400,39 +788,42 @@ void processInput(GLFWwindow* window)
 }
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-	float xpos = static_cast<float>(xposIn);
-	float ypos = static_cast<float>(yposIn);
+	
+		float xpos = static_cast<float>(xposIn);
+		float ypos = static_cast<float>(yposIn);
 
-	if (firstMouse)
-	{
+		if (firstMouse)
+		{
+			lastX = xpos;
+			lastY = ypos;
+			firstMouse = false;
+		}
+
+		float xoffset = xpos - lastX;
+		float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
 		lastX = xpos;
 		lastY = ypos;
-		firstMouse = false;
+
+		float sensitivity = 0.1f; // change this value to your liking
+		xoffset *= sensitivity;
+		yoffset *= sensitivity;
+	if (!guiEnabled) {
+		yaw += xoffset;
+		pitch += yoffset;
+
+		// make sure that when pitch is out of bounds, screen doesn't get flipped
+		if (pitch > 89.0f)
+			pitch = 89.0f;
+		if (pitch < -89.0f)
+			pitch = -89.0f;
+
+		glm::vec3 front;
+		front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+		front.y = sin(glm::radians(pitch));
+		front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+		cameraFront = glm::normalize(front);
 	}
-
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-	lastX = xpos;
-	lastY = ypos;
-
-	float sensitivity = 0.1f; // change this value to your liking
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	yaw += xoffset;
-	pitch += yoffset;
-
-	// make sure that when pitch is out of bounds, screen doesn't get flipped
-	if (pitch > 89.0f)
-		pitch = 89.0f;
-	if (pitch < -89.0f)
-		pitch = -89.0f;
-
-	glm::vec3 front;
-	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front.y = sin(glm::radians(pitch));
-	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	cameraFront = glm::normalize(front);
 }
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -465,4 +856,15 @@ void renderQuad()
 	glBindVertexArray(quadVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
+}
+
+bool collisionCallback(btManifoldPoint& cp, const btCollisionObjectWrapper* obj0, int id0, int index0, const btCollisionObjectWrapper* obj1, int id1, int index1)
+{
+	//cout << "when will this shit finally work man";
+	btAdjustInternalEdgeContacts(cp, obj1, obj0, id1, index1);
+	/*cp.m_normalWorldOnB = btVector3(0, 1, 0);
+	cp.m_appliedImpulse = 0;
+	cp.m_appliedImpulseLateral1 = 0;
+	cp.m_appliedImpulseLateral2 = 0;*/
+	return true;
 }
