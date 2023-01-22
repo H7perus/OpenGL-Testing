@@ -295,6 +295,7 @@ int main()
 	btRigidBody* body3;
 	btRigidBody* body4;
 	btRigidBody* body5;
+	btRigidBody* body6;
 
 
 	double testheight[100 * 100];
@@ -358,7 +359,7 @@ int main()
 		btRigidBody* body = new btRigidBody(rbInfo);
 		//body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
 		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
-
+		body->setContactProcessingThreshold(0);
 		//add the body to the dynamics world
 		dynamicsWorld->addRigidBody(body);
 	}
@@ -406,6 +407,7 @@ int main()
 
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShape, localInertia);
 		btRigidBody* body = new btRigidBody(rbInfo);
+		//body->setContactProcessingThreshold(0);
 		dynamicsWorld->addRigidBody(body);
 		body1 = body;
 	}
@@ -532,10 +534,26 @@ int main()
 		dynamicsWorld->addRigidBody(body);
 		body5 = body;
 	}
+	//TAILWHEEL
+	{
+		btCollisionShape* colShape = new btCylinderShape(btVector3(box_scale.x / 2, box_scale.y / 5, box_scale.z / 2));
+		collisionShapes.push_back(colShape);
+		btScalar mass(5.2f);
+		//rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool isDynamic = (mass != 0.f);
 
+		btVector3 localInertia(0, 0, 0);
+		if (isDynamic)
+			colShape->calculateLocalInertia(mass, localInertia);
+		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState4, colShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+		dynamicsWorld->addRigidBody(body);
+		body6 = body;
+	}
 	startTransform.setIdentity();
 	startTransform2.setIdentity();
-
+	
 	startTransform2.setRotation(quat);
 	btGeneric6DofSpring2Constraint* wheel1const = new btGeneric6DofSpring2Constraint(*body2, *body4, startTransform, startTransform2, RO_XYZ);
 
@@ -550,7 +568,7 @@ int main()
 	btGeneric6DofSpring2Constraint* wheel2const = new btGeneric6DofSpring2Constraint(*body3, *body5, startTransform, startTransform2, RO_XYZ);
 
 	
-	wheel2const->setMaxMotorForce(3, 1000000);
+	//wheel2const->setMaxMotorForce(3, 1000000);
 	wheel2const->setLimit(0, 0, 0);
 	wheel2const->setLimit(1, 0, 0);
 	wheel2const->setLimit(2, 0, 0);
@@ -561,8 +579,20 @@ int main()
 	body5->setFriction(1000000);
 	body4->setFriction(1000000);
 
+	LinearSpring* basedconstraint3value = new LinearSpring(*body1, *body6, btVector3(0, -0.5, -6), btVector3(0.0, -0.1, 0), 120000, 5000, 12000);
+	btTransform tailwheeltransform;
+	tailwheeltransform.setIdentity();
+	tailwheeltransform.setRotation(btQuaternion(0, 0, btRadians(90)));
+	btGeneric6DofSpring2Constraint* basedconstraint3 = new btGeneric6DofSpring2Constraint(*body1, *body6, basedconstraint3value->getFrameOffsetA(), tailwheeltransform);
+	basedconstraint3->setLimit(0, 0, 0);
+	basedconstraint3->setLimit(1, 0, 0);
+	basedconstraint3->setLimit(2, 0, 0);
+	basedconstraint3->setLimit(3, 1, 0);
+	basedconstraint3->setLimit(4, 0, 0);
+	basedconstraint3->setLimit(5, 0, 0);
+	
 
-
+	dynamicsWorld->addConstraint(basedconstraint3, true);
 
 	bool applyforce = false;
 	bool applyrotate = false;
@@ -727,7 +757,7 @@ int main()
 		testShader2.setMat4("model", model);
 		model = glm::mat4(1.0f);
 		testShader2.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-		//floor.Draw(testShader2);
+		floor.Draw(testShader2);
 		
 		debugDrawer.lineShader.use();
 		debugDrawer.SetMatrices(view, projection);
