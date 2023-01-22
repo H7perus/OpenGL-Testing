@@ -9,7 +9,6 @@
 #include <iostream>
 #include <string>
 #include "shader.h"
-#include "model.h"
 
 #include "stb_image.h"
 #include "physicsObject.h"
