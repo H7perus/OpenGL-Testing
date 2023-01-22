@@ -163,7 +163,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btInternalEdgeUtility.cpp" />
-    <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btManifoldResult.cpp" />
     <ClCompile Include="..\Dependencies\include\imgui-1.89.1\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\Dependencies\include\imgui-1.89.1\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui.cpp" />
