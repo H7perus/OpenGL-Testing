@@ -509,7 +509,7 @@ void btAdjustInternalEdgeContacts(btManifoldPoint& cp, const btCollisionObjectWr
 		newNormal = tri_normal;
 		//if (newNormal.getY() != 1.0f || newNormal.getX() != 0.0f || newNormal.getZ() != 0.0f)
 			//std::cout << newNormal.getX() << " " << newNormal.getY() << " " << newNormal.getZ() << std::endl;
-		newNormal = btVector3(0, 1, 0);
+		//newNormal = btVector3(0, 1, 0);
 		if (cp.getAppliedImpulse() > 500) {
 			std::cout << cp.m_normalWorldOnB.getX() << " " << cp.m_normalWorldOnB.getY() << " " << cp.m_normalWorldOnB.getZ() << std::endl;
 			std::cout << cp.getAppliedImpulse() << std::endl;
