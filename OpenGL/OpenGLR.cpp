@@ -87,10 +87,11 @@ int main()
 	dynamicsWorld->setDebugDrawer(&debugDrawer);
 
 
-	double testheight[100 * 100];
-	for (int i = 0; i < 100 * 100; i++)
+	double testheight[20 * 30];
+	for (int i = 0; i < 20 * 30; i++)
 	{
-		testheight[i] = 0; // float(i % 2);
+		testheight[i] = float(i % 20) / 20.0f;
+		
 	}
 
 	gContactAddedCallback = collisionCallback;
@@ -109,6 +110,8 @@ int main()
 		groundTransform.setIdentity();
 		groundTransform.setOrigin(btVector3(0, 3, -10));
 
+		
+
 		btScalar mass(0.);
 		btVector3 localInertia(0, 0, 0);
 		if (mass != 0.f)
@@ -117,6 +120,8 @@ int main()
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, terrainshape, localInertia);
 		btRigidBody* body = new btRigidBody(rbInfo);
 		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
+		std::cout << "threshold: " << body->getContactProcessingThreshold() << std::endl;
+		body->setContactProcessingThreshold(0);
 		dynamicsWorld->addRigidBody(body);
 	}
 	
@@ -127,12 +132,11 @@ int main()
 	startTransform2.setIdentity();
 	startTransform2.setOrigin(btVector3(0, 0, 0));
 
-	startTransform.setRotation(btQuaternion(1, 1, 1)); //COMMENT THIS OUT FOR NEUTRAL ROTATION
+	startTransform.setRotation(btQuaternion(1, 1, 1)); //COMMENT THIS OUT FOR NEUTRAL ROTATION OF THE BOX
 	btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
 	btDefaultMotionState* myMotionState4 = new btDefaultMotionState(startTransform2);
 	btDefaultMotionState* myMotionState5 = new btDefaultMotionState(startTransform2);
 	{
-		
 		btCollisionShape* colShape1 = new btBoxShape(btVector3(5.3, 0.6, 4.6));
 		btCompoundShape* colShape = new btCompoundShape();
 		btTransform cTransform;
@@ -145,12 +149,14 @@ int main()
 			colShape->calculateLocalInertia(mass, localInertia);
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShape, localInertia);
 		btRigidBody* body = new btRigidBody(rbInfo);
+		body->setContactProcessingThreshold(0);
 		dynamicsWorld->addRigidBody(body);
 		body1 = body;
 	}
+	body1->setActivationState(DISABLE_DEACTIVATION);
 	////UNCOMMENT THIS FOR THE WHEELS
 	//glm::vec3 box_scale = glm::vec3(0.72, 0.72, 0.72);
-	//body1->setActivationState(DISABLE_DEACTIVATION);
+	//
 	////WHEEL R
 	//{
 	//	btCollisionShape* colShape = new btCylinderShape(btVector3(box_scale.x / 2, box_scale.y / 5, box_scale.z / 2));

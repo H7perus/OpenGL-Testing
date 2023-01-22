@@ -51,7 +51,6 @@ LinearSpring::LinearSpring(btRigidBody& rbA, btRigidBody& rbB, btVector3 relLoc,
 	connectionOrientation.setEuler(0, 0, btRadians(90));
 	frameInB.setRotation(connectionOrientation);
 
-
 	setFrames(frameInA, frameInB);
 	setLinearUpperLimit(btVector3(0, direction.length(), 0));
 	setLinearLowerLimit(btVector3(0, 0, 0));
