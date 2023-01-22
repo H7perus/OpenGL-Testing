@@ -148,7 +148,7 @@ int main()
 		dynamicsWorld->addRigidBody(body);
 		body1 = body;
 	}
-	// UNCOMMENT THIS FOR THE WHEELS
+	////UNCOMMENT THIS FOR THE WHEELS
 	//glm::vec3 box_scale = glm::vec3(0.72, 0.72, 0.72);
 	//body1->setActivationState(DISABLE_DEACTIVATION);
 	////WHEEL R
