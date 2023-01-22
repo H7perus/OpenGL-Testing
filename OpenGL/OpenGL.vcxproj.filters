@@ -57,9 +57,6 @@
     <ClCompile Include="LinearSpring.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btManifoldResult.cpp">
-      <Filter>Quelldateien\physics</Filter>
-    </ClCompile>
     <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btInternalEdgeUtility.cpp">
       <Filter>Quelldateien\physics</Filter>
     </ClCompile>

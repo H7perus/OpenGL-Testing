@@ -494,15 +494,12 @@ void btAdjustInternalEdgeContacts(btManifoldPoint& cp, const btCollisionObjectWr
 	btTriangleInfoMap* triangleInfoMapPtr = 0;
 
 	//std::cout << colObj0Wrap->getCollisionObject()->getCollisionShape()->getShapeType() << std::endl;
-	//std::cout << "wow ok bro" << std::endl;
 	if (colObj0Wrap->getCollisionObject()->getCollisionShape()->getShapeType() == TERRAIN_SHAPE_PROXYTYPE)
 	{
-		//std::cout << "111111" << std::endl;
 		btHeightfieldTerrainShape* heightfield = (btHeightfieldTerrainShape*)colObj0Wrap->getCollisionObject()->getCollisionShape();
 		triangleInfoMapPtr = heightfield->getTriangleInfoMap();
 
 #define USE_HEIGHTFIELD_TRIANGLES
-		//std::cout << "deine mutter" << std::endl;
 #ifdef USE_HEIGHTFIELD_TRIANGLES
 		btVector3 newNormal = btVector3(0, 0, 1);
 
@@ -512,10 +509,11 @@ void btAdjustInternalEdgeContacts(btManifoldPoint& cp, const btCollisionObjectWr
 		newNormal = tri_normal;
 		//if (newNormal.getY() != 1.0f || newNormal.getX() != 0.0f || newNormal.getZ() != 0.0f)
 			//std::cout << newNormal.getX() << " " << newNormal.getY() << " " << newNormal.getZ() << std::endl;
-		if (cp.getAppliedImpulse() > 500)
+		//newNormal = btVector3(0, 1, 0);
+		if (cp.getAppliedImpulse() > 500) {
+			std::cout << cp.m_normalWorldOnB.getX() << " " << cp.m_normalWorldOnB.getY() << " " << cp.m_normalWorldOnB.getZ() << std::endl;
 			std::cout << cp.getAppliedImpulse() << std::endl;
-		newNormal = btVector3(0, 1, 0);
-		
+		}
 		//cp.m_distance1 = cp.m_distance1 * newNormal.dot(cp.m_normalWorldOnB);
 		cp.m_normalWorldOnB = newNormal;
 		// Reproject collision point along normal. (what about cp.m_distance1?)

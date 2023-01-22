@@ -48,6 +48,7 @@ LinearSpring::LinearSpring(btRigidBody& rbA, btRigidBody& rbB, btVector3 relLoc,
 	frameInA.setRotation(connectionOrientation);
 	btTransform frameInB;
 	frameInB.setIdentity();
+	connectionOrientation.setEuler(0, 0, btRadians(90));
 	frameInB.setRotation(connectionOrientation);
 
 
@@ -56,7 +57,7 @@ LinearSpring::LinearSpring(btRigidBody& rbA, btRigidBody& rbB, btVector3 relLoc,
 	setLinearLowerLimit(btVector3(0, 0, 0));
 	
 	setAngularUpperLimit(btVector3(0, 0, 0));
-	setAngularLowerLimit(btVector3(0, 0, 0));
+	setAngularLowerLimit(btVector3(1, 0, 0));
 
 	setDamping(1, damping);
 	setStiffness(1, stiffness);
