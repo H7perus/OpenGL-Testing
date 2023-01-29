@@ -24,7 +24,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="OpenGLR.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="..\Dependencies\src\glad.c">
@@ -63,6 +63,9 @@
     <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btInternalEdgeUtility.cpp">
       <Filter>Quelldateien\physics</Filter>
     </ClCompile>
+    <ClCompile Include="H7terrain.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -87,6 +90,9 @@
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="debugdraw.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="H7terrain.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

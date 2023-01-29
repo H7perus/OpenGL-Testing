@@ -24,7 +24,8 @@
 
 
 
-GLuint VBO, VAO;
+GLuint debugVBO, debugVAO;
+GLuint debugLineSize;
 class BulletDebugDrawer_OpenGL : public btIDebugDraw {
 public:
 	BulletDebugDrawer_OpenGL() {
@@ -38,6 +39,27 @@ public:
 		lineShader.setMat4("projection", pProjectionMatrix);
 		lineShader.setMat4("view", pViewMatrix);
 	}
+	virtual void drawAll() 
+	{
+
+		glBindVertexArray(debugVAO);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+
+
+		glDrawArrays(GL_LINES, 0, debugLineSize);
+		glBindVertexArray(0);
+
+		//glDeleteBuffers(1, &debugVBO);
+		//glDeleteVertexArrays(1, &debugVAO);
+		glGenVertexArrays(1, &debugVAO);
+		glGenBuffers(1, &debugVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
+		glBufferData(GL_ARRAY_BUFFER, debugLineSize * 4, 0, GL_DYNAMIC_DRAW);
+		debugLineSize = 0;
+	};
 
 	virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
 	{
@@ -57,24 +79,10 @@ public:
 		points[9] = color.x();
 		points[10] = color.y();
 		points[11] = color.z();
-
-		glDeleteBuffers(1, &VBO);
-		glDeleteVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		glGenVertexArrays(1, &VAO);
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-		glBindVertexArray(0);
-
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_LINES, 0, 2);
-		glBindVertexArray(0);
-
+		glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, debugLineSize * sizeof(GLfloat), sizeof(points), points);
+		debugLineSize += 12;
+		//std::cout << debugLineSize << std::endl;
 	}
 	virtual void drawContactPoint(const btVector3&, const btVector3&, btScalar, int, const btVector3&) {}
 	virtual void reportErrorWarning(const char*) {}
