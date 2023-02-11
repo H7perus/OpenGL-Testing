@@ -26,6 +26,7 @@
 
 GLuint debugVBO, debugVAO;
 GLuint debugLineSize;
+GLfloat debugPoints[12];
 class BulletDebugDrawer_OpenGL : public btIDebugDraw {
 public:
 	BulletDebugDrawer_OpenGL() {
@@ -64,23 +65,25 @@ public:
 	virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
 	{
 		// Vertex data
-		GLfloat points[12];
+		debugPoints[0] = from.x();
+		debugPoints[1] = from.y();
+		debugPoints[2] = from.z();
+		debugPoints[3] = color.x();
+		debugPoints[4] = color.y();
+		debugPoints[5] = color.z();
+		if (color.y() > 0.5)
+		{
+			return;
+		}
 
-		points[0] = from.x();
-		points[1] = from.y();
-		points[2] = from.z();
-		points[3] = color.x();
-		points[4] = color.y();
-		points[5] = color.z();
-
-		points[6] = to.x();
-		points[7] = to.y();
-		points[8] = to.z();
-		points[9] = color.x();
-		points[10] = color.y();
-		points[11] = color.z();
-		glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, debugLineSize * sizeof(GLfloat), sizeof(points), points);
+		debugPoints[6] = to.x();
+		debugPoints[7] = to.y();
+		debugPoints[8] = to.z();
+		debugPoints[9] = color.x();
+		debugPoints[10] = color.y();
+		debugPoints[11] = color.z();
+		//glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, debugLineSize * sizeof(GLfloat), sizeof(debugPoints), debugPoints);
 		debugLineSize += 12;
 		//std::cout << debugLineSize << std::endl;
 	}

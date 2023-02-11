@@ -14,6 +14,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 lightSpaceMatrix;
+//uniform mat4 decal_Mat;
 
 void main()
 {
@@ -21,5 +22,6 @@ void main()
 	vs_out.Normal = mat3(transpose(inverse(model))) * aNormal;
 	vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
 	vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
+	//vs_out.decalSpace = decal_Mat * vec4(vs_out.FragPos, 1.0);
 	gl_Position = projection * view * model * vec4(aPos, 1.0);
 }
