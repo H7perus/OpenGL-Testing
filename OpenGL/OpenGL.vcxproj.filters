@@ -22,6 +22,12 @@
     <Filter Include="Quelldateien\physics">
       <UniqueIdentifier>{4cd8cf25-7405-42a1-ab04-e79572b3ad66}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Quelldateien\rendering">
+      <UniqueIdentifier>{f1c01c47-660b-4d78-8bec-3f1724e6286d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\shaders\terrainShader">
+      <UniqueIdentifier>{0fda7d9c-8a1f-4e94-b672-6c42e430658d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -66,6 +72,21 @@
     <ClCompile Include="H7terrain.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="fwAircraft.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="shadowMap.cpp">
+      <Filter>Quelldateien\rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="H7Object.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="model.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="skyRendering.cpp">
+      <Filter>Quelldateien\rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -95,6 +116,18 @@
     <ClInclude Include="H7terrain.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="fwAircraft.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="shadowMap.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="H7Object.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="skyRendering.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="debugShader.frag">
@@ -115,9 +148,6 @@
     <None Include="empty.frag">
       <Filter>Quelldateien\shaders</Filter>
     </None>
-    <None Include="debugPlaneShader.frag">
-      <Filter>Quelldateien\shaders</Filter>
-    </None>
     <None Include="debugPlaneShader.vert">
       <Filter>Quelldateien\shaders</Filter>
     </None>
@@ -125,6 +155,18 @@
       <Filter>Quelldateien\shaders</Filter>
     </None>
     <None Include="physicsdebug.vert">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="skyShader.frag">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="skyShader.vert">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="debugPlaneShader.frag">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="terrainShader.frag">
       <Filter>Quelldateien\shaders</Filter>
     </None>
   </ItemGroup>

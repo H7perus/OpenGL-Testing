@@ -173,19 +173,28 @@
     <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_tables.cpp" />
     <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_widgets.cpp" />
     <ClCompile Include="..\Dependencies\src\glad.c" />
+    <ClCompile Include="fwAircraft.cpp" />
+    <ClCompile Include="H7Object.cpp" />
     <ClCompile Include="H7terrain.cpp" />
     <ClCompile Include="LinearSpring.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="model.cpp" />
+    <ClCompile Include="shadowMap.cpp" />
+    <ClCompile Include="skyRendering.cpp" />
     <ClCompile Include="stb.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debugdraw.h" />
     <ClInclude Include="flightModel.h" />
+    <ClInclude Include="fwAircraft.h" />
+    <ClInclude Include="H7Object.h" />
     <ClInclude Include="H7terrain.h" />
     <ClInclude Include="LinearSpring.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="physicsObject.h" />
+    <ClInclude Include="shadowMap.h" />
+    <ClInclude Include="skyRendering.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
@@ -198,6 +207,9 @@
     <None Include="light_shader.frag" />
     <None Include="physicsdebug.frag" />
     <None Include="physicsdebug.vert" />
+    <None Include="skyShader.vert" />
+    <None Include="skyShader.frag" />
+    <None Include="terrainShader.frag" />
     <None Include="vertexShader.vert">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
