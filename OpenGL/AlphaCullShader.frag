@@ -12,6 +12,7 @@ uniform vec3 lightPos;
 uniform vec3 viewPos;
 
 uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_diffuse2;
 uniform sampler2D texture_specular1;
 uniform sampler2D shadowMap;
 
@@ -135,13 +136,14 @@ uniform sampler2D albedo1;
 
 void main()
 {
-	if(texture(texture_diffuse1, fs_in.TexCoords).a < 0.1) discard;
-
 	vec3 result;
-	for(int i = 0; i < numOfPointLights; i++)
-	{
-		result += calcPointLight(pointLights[i]);
-	}
+	if(texture(texture_diffuse1, fs_in.TexCoords).a < 0.1) discard;
+		
+
+//	for(int i = 0; i < numOfPointLights; i++)
+//	{
+//		result += calcPointLight(pointLights[i]);
+//	}
 	result += calcDirLight(sun);
 	 
 	FragColor = vec4(result, 1.0);

@@ -14,7 +14,8 @@
 #include <iostream>
 #include <string>
 #include "shader.h"
-//#include "model.h"
+#include "model.h"
+#include "H7Asset.h"
 
 #include "stb_image.h"
 #include "physicsObject.h"
@@ -26,6 +27,7 @@
 #include "Bullet3.24/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
 #include "Bullet3.24/BulletCollision/CollisionDispatch/btInternalEdgeUtility.h"
 #include "Bullet3.24/BulletCollision/CollisionShapes/btTriangleShape.h"
+#include "H7WheelObject.h"
 #include "debugdraw.h"
 
 #include "LinearSpring.h"
@@ -89,16 +91,13 @@ glm::dmat4 btScalar2mat4(btScalar* matrix) {
 
 int main()
 {
-	
-
-
 
 
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
+	glfwWindowHint(GLFW_SAMPLES, 4);
 	GLFWwindow* window = glfwCreateWindow(1600, 900, "OpenGLR", NULL, NULL);
 	if (window == NULL)
 	{
@@ -108,7 +107,7 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	
+
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -124,6 +123,7 @@ int main()
 	Shader lightShader("vertexShader.vert", "light_shader.frag");
 	Shader planeShader("debugPlaneShader.vert", "debugPlaneShader.frag");
 	Shader shadowShader("lightDepthShader.vert", "empty.frag");
+	Shader treeShader("vertexShader.vert", "AlphaCullShader.frag");
 	BulletDebugDrawer_OpenGL debugDrawer;
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -141,9 +141,13 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-	H7Object wheelL("../assets/cylinder.obj");
-	H7Object wheelR("../assets/cylinder.obj");
-	H7Object airplane("../assets/Fw190A5.obj");
+	H7Object wheelL("../assets/cylinder.obj", true);
+	H7Object wheelR("../assets/cylinder.obj", true);
+	H7Object airplane("../assets/Fw190A5.obj", true);
+	H7Object tree("../assets/france_testmap/tree/pine.obj", true);
+	H7Object treeLOD1("../assets/france_testmap/tree/pineLOD1.obj", true);
+
+	H7Asset pine({ "../assets/france_testmap/tree/pine.obj", "../assets/france_testmap/tree/pineLOD1.obj" });
 
 	vector<H7Object*> models;
 	models.push_back(&wheelL);
@@ -151,8 +155,7 @@ int main()
 	models.push_back(&airplane);
 
 
-
-	std::cout << airplane.model->meshes.size() << std::endl;
+	//std::cout << airplane.model->meshes.size() << std::endl;
 
 
 	planeShader.use();
@@ -228,8 +231,19 @@ int main()
 		body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK);
 		//body->setContactProcessingThreshold(0);  //ENABLING THIS FUCKS WITH SLEEPSTATES
 		//add the body to the dynamics world
-		dynamicsWorld->addRigidBody(body);
+		//dynamicsWorld->addRigidBody(body);
 	}
+	btStaticPlaneShape* terrainshape = new btStaticPlaneShape(btVector3(0, 1, 0), 0);
+	btTransform PlaneTransform;
+	PlaneTransform.setIdentity();
+	PlaneTransform.setOrigin(btVector3(-9683.33, 8, 6400));
+	btDefaultMotionState* PlaneState = new btDefaultMotionState(PlaneTransform);
+	btRigidBody::btRigidBodyConstructionInfo rbInfo(0, PlaneState, terrainshape, btVector3(0, 0, 0));
+	btRigidBody* groundPlane = new btRigidBody(rbInfo);
+	dynamicsWorld->addRigidBody(groundPlane);
+
+
+
 	auto terrain_collisionshapeend = std::chrono::steady_clock::now();
 	std::cout << "terrain collision shape generation: " << (float)(terrain_collisionshapeend - terrain_collisionshapestart).count() / 1000000000 << std::endl;
 	dynamicsWorld->setDebugDrawer(&debugDrawer);
@@ -285,75 +299,33 @@ int main()
 		dynamicsWorld->addRigidBody(body);
 		body1 = body;
 	}
-	////WHEELBOX R
 	glm::vec3 box_scale = glm::vec3(0.72, 0.72, 0.72);
-	{
-		btCollisionShape* colShape = new btBoxShape(btVector3(box_scale.x / 4, box_scale.y / 4, box_scale.z / 4));
-		collisionShapes.push_back(colShape);
-		btScalar mass(80.f);
-		btVector3 localInertia(0, 0, 0);
-		if (mass != 0.f)
-			colShape->calculateLocalInertia(mass, localInertia);
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState2, colShape, localInertia);
-		btRigidBody* body = new btRigidBody(rbInfo);
-		//body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
-		dynamicsWorld->addRigidBody(body);
-		body2 = body;
-	}
-	//WHEELBOX L
-	{
-		btCollisionShape* colShape = new btBoxShape(btVector3(box_scale.x / 4, box_scale.y / 4, box_scale.z / 4));
-		//btCollisionShape* colShape = new btSphereShape(btScalar(1.));
-		collisionShapes.push_back(colShape);
 
-		btScalar mass(80.f);
-		btVector3 localInertia(0, 0, 0);
-		if (mass != 0)
-			colShape->calculateLocalInertia(mass, localInertia);
+	H7WheelObject WheelR(box_scale.y / 2, box_scale.y / 15);
+	WheelR.wheelspinConstraint->enableMotor(3, true);
+	WheelR.wheelspinConstraint->setMaxMotorForce(3, 2500);
+	H7WheelObject WheelL(box_scale.y / 2, box_scale.y / 15);
+	WheelL.wheelspinConstraint->enableMotor(3, true);
+	WheelL.wheelspinConstraint->setMaxMotorForce(3, 2500);
+	H7WheelObject WheelTail(box_scale.y / 3, box_scale.y / 15, 0.2, 70.0, true);
+	btTransform tailW;
+	tailW.setIdentity();
+	tailW.setOrigin(btVector3(-9120, 11.5 + 1, 5900 - 5));
+	WheelTail.firstHelper->setWorldTransform(tailW);
+	WheelTail.wheel->setWorldTransform(tailW);
 
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState3, colShape, localInertia);
-		btRigidBody* body = new btRigidBody(rbInfo);
-		//body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
-		dynamicsWorld->addRigidBody(body);
-		body3 = body;
-	}
+	WheelR.addToWorld(dynamicsWorld);
+	WheelL.addToWorld(dynamicsWorld);
+	WheelTail.addToWorld(dynamicsWorld);
 
-	LinearSpring* basedconstraint = new LinearSpring(*body1, *body2, btVector3(-2.03033, -1.2981, 0.62), btVector3(-0.1, -0.6, 0), 120000, 5000, 20000);
-	LinearSpring* basedconstraint2 = new LinearSpring(*body1, *body3, btVector3(2.03033, -1.2981, 0.62), btVector3(0.1, -0.6, 0), 120000, 5000, 20000);
-	
+	LinearSpring* basedconstraint = new LinearSpring(*body1, *WheelR.firstHelper, btVector3(-2.03033, -1.2981, 0.62), btVector3(-0.1, -0.6, 0), 100000, 5000, 15000);
+	LinearSpring* basedconstraint2 = new LinearSpring(*body1, *WheelL.firstHelper, btVector3(2.03033, -1.2981, 0.62), btVector3(0.1, -0.6, 0), 100000, 5000, 15000);
+	myMotionState4 = WheelR.myMotionStateWheel;
+	myMotionState5 = WheelL.myMotionStateWheel;
 	//body1->setActivationState(DISABLE_DEACTIVATION);
 	//body1->setActivationState(WANTS_DEACTIVATION);
 	dynamicsWorld->addConstraint(basedconstraint, true);
 	dynamicsWorld->addConstraint(basedconstraint2, true);
-
-	//WHEEL R
-	{
-		btCollisionShape* colShape = new btCylinderShape(btVector3(box_scale.x / 2, box_scale.y / 5, box_scale.z / 2));
-		collisionShapes.push_back(colShape);
-		btScalar mass(5.2f);
-		bool isDynamic = (mass != 0.f);
-		btVector3 localInertia(0, 0, 0);
-		if (isDynamic)
-			colShape->calculateLocalInertia(mass, localInertia);
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState4, colShape, localInertia);
-		btRigidBody* body = new btRigidBody(rbInfo);
-		dynamicsWorld->addRigidBody(body);
-		body4 = body;
-	}
-	//WHEEL L 
-	{
-		btCollisionShape* colShape = new btCylinderShape(btVector3(box_scale.x / 2, box_scale.y / 5, box_scale.z / 2));
-		collisionShapes.push_back(colShape);
-		btScalar mass(5.2f);
-		bool isDynamic = (mass != 0.f);
-		btVector3 localInertia(0, 0, 0);
-		if (isDynamic)
-			colShape->calculateLocalInertia(mass, localInertia);
-		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState5, colShape, localInertia);
-		btRigidBody* body = new btRigidBody(rbInfo);
-		dynamicsWorld->addRigidBody(body);
-		body5 = body;
-	}
 	//TAILWHEEL
 	{
 		btCollisionShape* colShape = new btCylinderShape(btVector3(box_scale.x / 2, box_scale.y / 5, box_scale.z / 2));
@@ -366,55 +338,28 @@ int main()
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState6, colShape, localInertia);
 		btRigidBody* body = new btRigidBody(rbInfo);
 		body->setRestitution(0);
-		dynamicsWorld->addRigidBody(body);
+		//dynamicsWorld->addRigidBody(body);
 		body6 = body;
 		body->setFriction(1000);
 	}
-	startTransform.setIdentity();
-	startTransform2.setIdentity();
-	startTransform2.setRotation(quat);
-	btGeneric6DofSpring2Constraint* wheel1const = new btGeneric6DofSpring2Constraint(*body2, *body4, startTransform, startTransform2, RO_XYZ);
-	wheel1const->setLimit(0, 0, 0);
-	wheel1const->setLimit(1, 0, 0);
-	wheel1const->setLimit(2, 0, 0);
-	wheel1const->setLimit(3, 1, 0);
-	wheel1const->setLimit(4, 0, 0);
-	wheel1const->setLimit(5, 0, 0);
-	wheel1const->setDamping(3, 1);
-	wheel1const->enableMotor(3, true);
-	wheel1const->setMaxMotorForce(3, 2500);
-	dynamicsWorld->addConstraint(wheel1const, true);
-	
-	btGeneric6DofSpring2Constraint* wheel2const = new btGeneric6DofSpring2Constraint(*body3, *body5, startTransform, startTransform2, RO_XYZ);
-	wheel2const->setLimit(0, 0, 0);
-	wheel2const->setLimit(1, 0, 0);
-	wheel2const->setLimit(2, 0, 0);
-	wheel2const->setLimit(3, 1, 0);
-	wheel2const->setLimit(4, 0, 0);
-	wheel2const->setLimit(5, 0, 0);
-	wheel2const->setDamping(3, 1);
-	wheel2const->enableMotor(3, true);
-	wheel2const->setMaxMotorForce(3, 2500);
-	dynamicsWorld->addConstraint(wheel2const, true);
-	body5->setFriction(1000);
-	body4->setFriction(1000);
 
-	LinearSpring* basedconstraint3value = new LinearSpring(*body1, *body6, btVector3(0, -0.5, -6), btVector3(0.0, -0.1, 0), 120000, 5000, 12000);
+	LinearSpring* basedconstraint3value = new LinearSpring(*body1, *WheelTail.firstHelper, btVector3(0, -0.5, -6), btVector3(0.0, -0.1, 0), 120000, 5000, 12000);
 	btTransform tailwheeltransform;
+	btTransform planetailwheeltransform;
 	tailwheeltransform.setIdentity();
-	tailwheeltransform.setRotation(btQuaternion(0, 0, btRadians(90)));
-	btGeneric6DofSpring2Constraint* basedconstraint3 = new btGeneric6DofSpring2Constraint(*body1, *body6, basedconstraint3value->getFrameOffsetA(), tailwheeltransform);
-	basedconstraint3->setLimit(0, 0, 0);
-	basedconstraint3->setLimit(1, 0, 0.1);
-	basedconstraint3->setLimit(2, 0, 0);
-	basedconstraint3->setLimit(3, 1, 0);
-	basedconstraint3->setLimit(4, 0, 0);
-	basedconstraint3->setLimit(5, 0, 0);
-
+	tailwheeltransform.setOrigin(btVector3(0,0,0));
+	//tailwheeltransform.setRotation(btQuaternion(0, 0, btRadians(90)));
+	planetailwheeltransform.setIdentity();
+	planetailwheeltransform.setOrigin(btVector3(0, -0.6, -6));
+	btGeneric6DofSpring2Constraint* basedconstraint3 = new btGeneric6DofSpring2Constraint(*body1, *WheelTail.firstHelper, planetailwheeltransform, tailwheeltransform);
+	WheelTail.wheel->setRestitution(0);
+	WheelTail.wheel->setFriction(1000);
 	basedconstraint3->setStiffness(1, 60000);
 	basedconstraint3->enableSpring(1, true);
 	basedconstraint3->setDamping(1, 10000);
 	basedconstraint3->setEquilibriumPoint(1, 0.1);
+	basedconstraint3->setAngularLowerLimit(btVector3(0, 0, 0));
+	basedconstraint3->setAngularUpperLimit(btVector3(0, 0, 0));
 	
 	dynamicsWorld->addConstraint(basedconstraint3, true);
 
@@ -471,7 +416,11 @@ int main()
 	//body1->setAngularVelocity(btVector3(0, 0, 0));
 	//body1->setLinearVelocity(btVector3(0, 0, 0));
 
+	glm::vec3 airfield_pos(-9683.33, 50.0, 6400);
+	terrain.generate_tree_locations("../assets/france_testmap/treemap.png");
 
+	Model* testModel = new Model(""); //treeLOD1.model;
+	glEnable(GL_MULTISAMPLE);
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -493,9 +442,10 @@ int main()
 		ImGui::SliderFloat("airfield rotation", &af_rotation, 0.0f, 360.0);
 		ImGui::Checkbox("freecam", &freecam);
 		ImGui::Checkbox("activate", &factivate);
+		ImGui::Checkbox("lock tailwheel", &WheelTail.locked);
 		bool spawn1 = ImGui::Button("Spawn 1");
-		bool spawn2 = ImGui::Button("Spawn 2");
-		
+		bool unload = ImGui::Button("unload");
+		WheelTail.updateWheelState();
 
 		if (spawn1)
 		{
@@ -505,15 +455,15 @@ int main()
 			body1->setLinearVelocity(btVector3(0, 0, 0));
 
 		}
-		if (spawn2)
+		if (unload)
 		{
-			body1->setCenterOfMassTransform(spawn2Trans);
-			body1->setAngularVelocity(btVector3(0, 0, 0));
-			body1->setLinearVelocity(btVector3(0, 0, 0));
+			airplane.Unload();
 		}
-		
 
 		ImGui::Text("speed: %.1f%s", body1->getLinearVelocity().length() * 3.6, "kph");
+		glm::vec3 dirvector = glm::normalize(cameraPos - glm::dvec3(airfield_pos));
+		dirvector = glm::normalize(glm::vec3(1, 0, 1));
+		ImGui::Text("rotation: %.5f%s", atan2(dirvector.x, dirvector.z), "rad");
 		ImGui::End();
 		ImGui::Render();
 		if (factivate)
@@ -540,7 +490,7 @@ int main()
 		if (!freecam)
 		{
 			glm::dvec4 plane_pos;
-			plane_pos = plane_modelmat * glm::dvec4(1.8, 0.2, -7.5, 1.0);
+			plane_pos = plane_modelmat * glm::dvec4(1.8, 0.2, -11.5, 1.0);
 			glm::vec3 plane_front(glm::mat3(plane_modelmat) * glm::vec3(0.0, 0.0, 1.0));
 			glm::vec3 plane_up(glm::mat3(plane_modelmat) * glm::vec3(0.0, 1.0, 0.0));
 			cameraPos = plane_pos;
@@ -552,7 +502,7 @@ int main()
 		applyFlightModel(*body1);
 		
 		btVector3 torque(25000 * -control_input_elev, 15000 * -control_input_rud, 25000 * control_input_ail);
-		torque = body1->getWorldTransform().getBasis() * torque * body1->getLinearVelocity().length() * 0.03;
+		torque = body1->getWorldTransform().getBasis() * torque * (body1->getLinearVelocity().length() * 0.03 + .1);
 		body1->applyTorque(torque);
 
 		if (applyforce) 
@@ -568,7 +518,10 @@ int main()
 
 		
 		//glm::mat4 done_plane_modelmat = glm::mat4(plane_modelmat);
-
+		treeShader.use();
+		treeShader.setVec3("viewPos", glm::vec3(0.0));
+		treeShader.setMat4("projection", projection);
+		treeShader.setMat4("view", view);
 		testShader2.use();
 		testShader2.setVec3("viewPos", glm::vec3(0.0));
 		testShader2.setMat4("projection", projection);
@@ -591,7 +544,12 @@ int main()
 		plane_modelmat = glm::scale(plane_modelmat, glm::dvec3(box_scale.x, box_scale.y / 5, box_scale.z));
 		wheelL.setTransform(glm::translate(glm::dmat4(1.0), -cameraPos) * plane_modelmat);
 
+		model = glm::translate(glm::mat4(1.0f), glm::vec3(-9683.33, 8.0, 6400) - glm::vec3(cameraPos));
+		tree.setTransform(model);
+
 		glm::mat4 lightSpaceMatrix = shadowMap.draw();
+		testShader2.use();
+		testShader2.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		
 		glViewport(0, 0, global_width, global_height);
@@ -606,6 +564,32 @@ int main()
 		airplane.Draw(testShader2);
 		wheelR.Draw(testShader2);
 		wheelL.Draw(testShader2);
+		for (glm::dvec3 treeloc : terrain.treelocations)
+		{
+			if (glm::distance(cameraPos, treeloc) > 300)
+			{
+				glm::mat4 treemat = glm::mat4(1.0);
+				//treemat = glm::rotate(treemat, atan2(glm::vec3(treeloc-cameraPos).y, glm::vec3(treeloc - cameraPos).x), glm::vec3(0, 1, 0));
+				//treemat = glm::rotate(treemat, glm::radians(90.0f), glm::vec3(0, 1, 0));
+
+				treemat = glm::translate(treemat, glm::vec3(treeloc - cameraPos)) *glm::rotate(treemat, glm::radians(-90.f) + atan2(glm::vec3(cameraPos - treeloc).x, glm::vec3(cameraPos - treeloc).z), glm::vec3(0, 1, 0));
+				treeLOD1.setTransform(treemat); 
+				treeLOD1.Draw(testShader2);
+				//std::cout << "load state: " << (int)treeLOD1.load_state << std::endl;
+				if (treeLOD1.load_state == 2)
+				{
+					
+					testModel->Draw(testShader2);
+				}
+					
+				//	std::cout << "meshes: " << treeLOD1.model->meshes.size() << std::endl;
+			}
+			else
+			{
+				tree.setTransform(glm::translate(glm::mat4(1.0), glm::vec3(treeloc - cameraPos)));
+				tree.Draw(testShader2);
+			}
+		}
 
 		terrain.tShader->use();
 		terrain.tShader->setVec3("viewPos", glm::vec3(0.0));
@@ -613,8 +597,8 @@ int main()
 		terrain.tShader->setMat4("projection", projection);
 
 		terrain.tShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
-
-		glm::vec3 airfield_pos(-9683.33, 50.0, 6400);
+		
+		
 
 		float af_scale = 5;
 
@@ -628,13 +612,17 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, shadowMap.depthMap);
 		//terrain.tShader->setInt("main_albedo", 0);
 		//terrain.tShader->setInt("subtex_land", 1);
-		terrain.draw();
+		terrain.Draw(0);
+		terrain.Draw(1);
+		
+		
+
 		glBindVertexArray(0);
-		/*debugDrawer.lineShader.use();
+		debugDrawer.lineShader.use();
 		debugDrawer.SetMatrices(glm::translate(view, glm::vec3(-cameraPos)), projection);
 		glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
 		dynamicsWorld->debugDrawWorld();
-		debugDrawer.drawAll();*/
+		debugDrawer.drawAll();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		glfwSwapBuffers(window);
 	}

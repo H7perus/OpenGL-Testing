@@ -41,9 +41,9 @@ public:
 	{
 		glm::mat4 lightProjection, lightView;
 		glm::mat4 lightSpaceMatrix;
-		float near_plane = 13.0f, far_plane = 50.0f;
-		lightProjection = glm::ortho(-30.0f, 30.0f, -30.0f, 30.0f, near_plane, far_plane);
-		glm::vec3 plane_pos = models.at(0)->transformMat * glm::vec4(0.0, 0.0, 0.0, 1.0);
+		float near_plane = 1.0f, far_plane = 100.0f;
+		lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, near_plane, far_plane);
+		glm::vec3 plane_pos = glm::vec3(0.0);
 		lightView = glm::lookAt(lightPos + plane_pos, plane_pos, glm::normalize(glm::vec3(-0.0, 1.0, -0.0)));
 		lightSpaceMatrix = lightProjection * lightView;
 		// render scene from light's point of view =========================================

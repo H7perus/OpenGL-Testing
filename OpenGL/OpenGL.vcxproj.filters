@@ -87,6 +87,15 @@
     <ClCompile Include="skyRendering.cpp">
       <Filter>Quelldateien\rendering</Filter>
     </ClCompile>
+    <ClCompile Include="H7WheelObject.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="H7TreeCollection.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="H7Asset.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -128,6 +137,15 @@
     <ClInclude Include="skyRendering.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="H7WheelObject.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="H7TreeCollection.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="H7Asset.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="debugShader.frag">
@@ -167,6 +185,9 @@
       <Filter>Quelldateien\shaders</Filter>
     </None>
     <None Include="terrainShader.frag">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="AlphaCullShader.frag">
       <Filter>Quelldateien\shaders</Filter>
     </None>
   </ItemGroup>

@@ -71,10 +71,10 @@ public:
 		debugPoints[3] = color.x();
 		debugPoints[4] = color.y();
 		debugPoints[5] = color.z();
-		if (color.y() > 0.5)
-		{
-			return;
-		}
+		//if (color.y() > 0.5)
+		//{
+			//return;
+		//}
 
 		debugPoints[6] = to.x();
 		debugPoints[7] = to.y();

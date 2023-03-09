@@ -21,7 +21,7 @@ public:
 	int width, length;
 	int channels = 1;
 	int EBO_size = 0;
-	GLuint tVBO, tVAO, tEBO;
+	GLuint tVBO, tVAO, tEBOLOD1, tEBO;
 	Shader* tShader;
 	float u_per_px;
 
@@ -29,6 +29,8 @@ public:
 	unsigned int textureCount = 0;
 	unsigned int decalCount = 0;
 	std::vector<unsigned int> textures;
+	std::vector<glm::dvec3> treelocations;
+
 	unsigned int ground_texture, ground_texture2, water_texture, splat_map, airfield_decal; //this will be changed in the future, just having one texture is a pretty bad approach
 	uint16_t* height_image_data;
 	unsigned char *color_data2, *color_data3;
@@ -47,6 +49,15 @@ public:
 		glGenBuffers(1, &tEBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBO);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, pow(map_size - 1, 2) * 6 * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+
+		glGenBuffers(1, &tEBOLOD1);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBOLOD1);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBOLOD1);
+
+		int indices[6] = {0, width-1, width * width-1, width * width - 1, width * width - width, 0};
+
+		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(indices), indices);
 
 		glGenVertexArrays(1, &tVAO);
 		glBindVertexArray(tVAO);
@@ -187,7 +198,7 @@ public:
 		textures.insert(textures.end(), texture_int);
 		stbi_image_free(color_data);
 	}
-	void draw()
+	void Draw(int LOD_level)
 	{
 		tShader->use();
 		for (int i = 0; i < textures.size(); i++)
@@ -198,19 +209,57 @@ public:
 		glm::mat4 modelmat = glm::translate(glm::dmat4(1.0), glm::dvec3(0.0f, -2.0f, 0.0f) -*cameraPosPtr);
 		tShader->setMat4("model", modelmat);
 
-
-
-		glBindBuffer(GL_ARRAY_BUFFER, tVBO);
-		glBindVertexArray(tVAO);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBO);
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		//glDrawArrays(GL_TRIANGLES, 0, pow(terrain_size - 1, 2) * 24 - 5);
-		glDrawElements(GL_TRIANGLES, pow(width - 1, 2) * 6, GL_UNSIGNED_INT, 0);
+		if (LOD_level == 1)
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, tVBO);
+			glBindVertexArray(tVAO);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBOLOD1);
+			//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			//glDrawArrays(GL_TRIANGLES, 0, pow(terrain_size - 1, 2) * 24 - 5);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		}
+		else
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, tVBO);
+			glBindVertexArray(tVAO);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBO);
+			//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			//glDrawArrays(GL_TRIANGLES, 0, pow(terrain_size - 1, 2) * 24 - 5);
+			glDrawElements(GL_TRIANGLES, pow(width - 1, 2) * 6, GL_UNSIGNED_INT, 0);
+		}
+		
 	}
 	void set_cameraPosPtr(glm::dvec3* cameraPos)
 	{
 		cameraPosPtr = cameraPos;
 	}
+	void generate_tree_locations(const char texture_path[])
+	{
+		int tree_density = 20;
+		int t_width, t_height, t_channels;
+		stbi_set_flip_vertically_on_load(false);
+		uint8_t* treedata = (uint8_t*)(stbi_load(texture_path, &t_width, &t_height, &t_channels, 1));
+		srand(1);
+		float actual_mapsize = (map_size * u_per_px - u_per_px);
+		float actual_px_width = actual_mapsize / t_width;
+		float actual_px_height = actual_mapsize / t_height;
+		
+		for(int x = 0; x < t_width; x++)
+			for (int y = 0; y < t_height; y++)
+			{
+				int tree_amount = treedata[y * t_width + x] * tree_density / 256;
+
+				for (int i = 0; i < tree_amount; i++)
+				{
+					double x_coord = -actual_mapsize / 2 + x * actual_px_width +(rand() % 1000) / 1000.0 * actual_px_width;
+					double y_coord = -actual_mapsize / 2 + y * actual_px_height +(rand() % 1000) / 1000.0 * actual_px_height;
+					treelocations.push_back(glm::dvec3(x_coord, 8.0f, y_coord));
+				}
+			}
+
+
+		stbi_image_free(treedata);
+	};
 private:
 	void get_vertdata(GLfloat *coordinates, const int &ind)
 	{

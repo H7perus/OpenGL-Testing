@@ -33,6 +33,10 @@ struct Vertex {
 
 struct Texture {
     unsigned int id;
+    unsigned int height;
+    unsigned int width;
+    unsigned int nrComponents;
+    unsigned char* data;
     string type;
     string path;
 };
@@ -53,7 +57,7 @@ public:
         this->textures = textures;
 
         // now that we have all the required data, set the vertex buffers and its attribute pointers.
-        setupMesh();
+        //setupMesh();
     }
 
     // render the mesh
@@ -93,14 +97,11 @@ public:
         // always good practice to set everything back to defaults once configured.
         glActiveTexture(GL_TEXTURE0);
     }
-
-private:
-    // render data 
-    unsigned int VBO, EBO;
-
-    // initializes all the buffer objects/arrays
-    void setupMesh()
+    void setupMesh(vector<Texture> &modelTextures)
     {
+
+        meshTextureFromFile(modelTextures);
+
         // create buffers/arrays
         glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
@@ -142,5 +143,24 @@ private:
         glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
         glBindVertexArray(0);
     }
+private:
+    // render data 
+    unsigned int VBO, EBO;
+    void meshTextureFromFile(std::vector<Texture> &modelTextures,  bool gamma = false)
+    {
+        for (Texture &tex : modelTextures)
+        {
+            for (Texture& meshTex : this->textures)
+            {
+                if (meshTex.path == tex.path)
+                {
+                    meshTex.id = tex.id;
+                }
+            }
+        }
+
+    }
+    // initializes all the buffer objects/arrays
+    
 };
 #endif

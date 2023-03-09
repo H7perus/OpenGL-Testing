@@ -21,7 +21,8 @@
 #include <vector>
 using namespace std;
 
-unsigned int TextureFromFile(const char* path, const string& directory, bool gamma = false);
+Texture TextureFromFile(const char* path, const string& directory, bool gamma = false);
+void TextureToOpenGL(Texture &texture);
 
 class Model
 {
@@ -45,7 +46,14 @@ public:
         for (unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].Draw(shader);
     }
-
+    void loadTextures()
+    {
+        for (Texture& tex : textures_loaded)
+        {
+            TextureToOpenGL(tex);
+            std::cout << "man wow: " << tex.path.c_str() << std::endl;
+        }
+    }
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(string const& path)
@@ -194,7 +202,7 @@ private:
             if (!skip)
             {   // if texture hasn't been loaded already, load it
                 Texture texture;
-                texture.id = TextureFromFile(str.C_Str(), this->directory);
+                texture = TextureFromFile(str.C_Str(), this->directory);
                 texture.type = typeName;
                 texture.path = str.C_Str();
                 textures.push_back(texture);
@@ -206,5 +214,5 @@ private:
 };
 
 
-unsigned int TextureFromFile(const char* path, const string& directory, bool gamma);
+//Texture TextureFromFile(const char* path, const string& directory, bool gamma);
 #endif
