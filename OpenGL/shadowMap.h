@@ -53,10 +53,10 @@ public:
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glCullFace(GL_FRONT);
-		for (H7Object* model : models)
+		for (H7Object* object : models)
 		{
-			shadowDepthShader->setMat4("model", model->transformMat);
-			model->Draw(*shadowDepthShader);
+			shadowDepthShader->setMat4("model", object->transformMat);
+			object->drawShadow(*shadowDepthShader, 0);
 		}
 		return lightSpaceMatrix;
 	}

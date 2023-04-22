@@ -28,6 +28,12 @@
     <Filter Include="Quelldateien\shaders\terrainShader">
       <UniqueIdentifier>{0fda7d9c-8a1f-4e94-b672-6c42e430658d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Quelldateien\H7cpps">
+      <UniqueIdentifier>{6cb781e4-4f28-48df-a3eb-f886bcaa42f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\H7headers">
+      <UniqueIdentifier>{8de272cf-34b0-4ee5-8ec3-2236e3bedaf4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -63,23 +69,11 @@
     <ClCompile Include="LinearSpring.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btManifoldResult.cpp">
-      <Filter>Quelldateien\physics</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btInternalEdgeUtility.cpp">
-      <Filter>Quelldateien\physics</Filter>
-    </ClCompile>
-    <ClCompile Include="H7terrain.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="fwAircraft.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="shadowMap.cpp">
       <Filter>Quelldateien\rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="H7Object.cpp">
-      <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="model.cpp">
       <Filter>Quelldateien</Filter>
@@ -87,14 +81,32 @@
     <ClCompile Include="skyRendering.cpp">
       <Filter>Quelldateien\rendering</Filter>
     </ClCompile>
-    <ClCompile Include="H7WheelObject.cpp">
-      <Filter>Quelldateien</Filter>
+    <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btInternalEdgeUtility.cpp">
+      <Filter>Quelldateien\physics</Filter>
     </ClCompile>
-    <ClCompile Include="H7TreeCollection.cpp">
-      <Filter>Quelldateien</Filter>
+    <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btManifoldResult.cpp">
+      <Filter>Quelldateien\physics</Filter>
     </ClCompile>
     <ClCompile Include="H7Asset.cpp">
-      <Filter>Quelldateien</Filter>
+      <Filter>Quelldateien\H7cpps</Filter>
+    </ClCompile>
+    <ClCompile Include="H7AssetManager.cpp">
+      <Filter>Quelldateien\H7cpps</Filter>
+    </ClCompile>
+    <ClCompile Include="H7Object.cpp">
+      <Filter>Quelldateien\H7cpps</Filter>
+    </ClCompile>
+    <ClCompile Include="H7terrain.cpp">
+      <Filter>Quelldateien\H7cpps</Filter>
+    </ClCompile>
+    <ClCompile Include="H7TreeCollection.cpp">
+      <Filter>Quelldateien\H7cpps</Filter>
+    </ClCompile>
+    <ClCompile Include="H7WheelObject.cpp">
+      <Filter>Quelldateien\H7cpps</Filter>
+    </ClCompile>
+    <ClCompile Include="H7World.cpp">
+      <Filter>Quelldateien\H7cpps</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -122,29 +134,35 @@
     <ClInclude Include="debugdraw.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="H7terrain.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="fwAircraft.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="shadowMap.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="H7Object.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="skyRendering.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="H7WheelObject.h">
-      <Filter>Headerdateien</Filter>
+    <ClInclude Include="H7Asset.h">
+      <Filter>Headerdateien\H7headers</Filter>
+    </ClInclude>
+    <ClInclude Include="H7AssetManager.h">
+      <Filter>Headerdateien\H7headers</Filter>
+    </ClInclude>
+    <ClInclude Include="H7Object.h">
+      <Filter>Headerdateien\H7headers</Filter>
+    </ClInclude>
+    <ClInclude Include="H7Terrain.h">
+      <Filter>Headerdateien\H7headers</Filter>
     </ClInclude>
     <ClInclude Include="H7TreeCollection.h">
-      <Filter>Headerdateien</Filter>
+      <Filter>Headerdateien\H7headers</Filter>
     </ClInclude>
-    <ClInclude Include="H7Asset.h">
-      <Filter>Headerdateien</Filter>
+    <ClInclude Include="H7WheelObject.h">
+      <Filter>Headerdateien\H7headers</Filter>
+    </ClInclude>
+    <ClInclude Include="H7World.h">
+      <Filter>Headerdateien\H7headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

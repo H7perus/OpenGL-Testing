@@ -53,8 +53,8 @@ public:
 		glDrawArrays(GL_LINES, 0, debugLineSize);
 		glBindVertexArray(0);
 
-		//glDeleteBuffers(1, &debugVBO);
-		//glDeleteVertexArrays(1, &debugVAO);
+		glDeleteBuffers(1, &debugVBO);
+		glDeleteVertexArrays(1, &debugVAO);
 		glGenVertexArrays(1, &debugVAO);
 		glGenBuffers(1, &debugVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, debugVBO);

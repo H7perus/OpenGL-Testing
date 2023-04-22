@@ -11,6 +11,17 @@
 #include <chrono>
 #include <vector>
 
+struct H7TerrainTile
+{
+	unsigned int test;
+};
+
+struct H7TerrainSun
+{
+	glm::vec3 ambient = glm::vec3(1.0);
+	glm::vec3 diffuse = glm::vec3(1.0);
+	glm::vec3 direction = glm::vec3(1.0);
+};
 
 //I need to implement configs for the maps as a replacement for hardcoding, like a JSON for example. I will continue to hardcode for a bit as I learn more.
 class H7terrain
@@ -30,6 +41,9 @@ public:
 	unsigned int decalCount = 0;
 	std::vector<unsigned int> textures;
 	std::vector<glm::dvec3> treelocations;
+
+	H7TerrainSun sun; //this shouldn't be here, honestly I should scrap this existing.
+
 
 	unsigned int ground_texture, ground_texture2, water_texture, splat_map, airfield_decal; //this will be changed in the future, just having one texture is a pretty bad approach
 	uint16_t* height_image_data;
@@ -112,7 +126,6 @@ public:
 		std::cout << "total time: " << (float)(time_gen + time_height).count() / 1000000000 << std::endl;
 		GLfloat face_data[24];
 	};
-
 	void load_color()
 	{
 		tShader->use(); //I am an idiot, forgot this and was chasing texture assign bugs
@@ -136,7 +149,7 @@ public:
 		textures.push_back(splat_map);
 		stbi_image_free(height_image_data);
 
-		add_decal("../assets/france_testmap/airfield_decal.png");
+		add_decal("../assets/france_testmap/airfield_decal2.png");
 
 		tShader->setInt("subtex_land", 1);
 	}
@@ -235,7 +248,7 @@ public:
 	}
 	void generate_tree_locations(const char texture_path[])
 	{
-		int tree_density = 20;
+		int tree_density = 40;
 		int t_width, t_height, t_channels;
 		stbi_set_flip_vertically_on_load(false);
 		uint8_t* treedata = (uint8_t*)(stbi_load(texture_path, &t_width, &t_height, &t_channels, 1));
@@ -260,6 +273,12 @@ public:
 
 		stbi_image_free(treedata);
 	};
+	void set_sun(glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 direction)
+	{
+		sun.ambient = ambient;
+		sun.diffuse = diffuse;
+		sun.direction = direction;
+	}
 private:
 	void get_vertdata(GLfloat *coordinates, const int &ind)
 	{

@@ -32,8 +32,9 @@ LinearSpring::LinearSpring(btRigidBody& rbA, btRigidBody& rbB, btVector3 relLoc,
 }
 
 LinearSpring::LinearSpring(btRigidBody& rbA, btRigidBody& rbB, btVector3 relLoc, btVector3 direction, btScalar stiffness, btScalar damping, btScalar precompression)
-	: btGeneric6DofSpring2Constraint(rbA, rbB, btTransform(), btTransform())
+	: btGeneric6DofSpring2Constraint(rbA, rbB, btTransform().getIdentity(), btTransform().getIdentity())
 {
+
 	btScalar angleRoll = atan2(direction.getX(), direction.getY());
 	btScalar anglePitch = atan2(direction.getY(), direction.getZ());
 	btQuaternion connectionOrientation;

@@ -37,8 +37,15 @@ public:
     Model(string const& path, bool gamma = false) : gammaCorrection(gamma)
     {
         loadModel(path);
-        cout  << path  << " " << textures_loaded.size() << endl;
+        cout << path << " " << textures_loaded.size() << endl;
     }
+    /*~Model() 
+    {
+        for (Texture& tex : textures_loaded)
+        {
+            glActiveTexture
+        }
+    }*/
 
     // draws the model, and thus all its meshes
     void Draw(Shader& shader)

@@ -32,12 +32,14 @@
 
 #include "LinearSpring.h"
 #include "flightModel.h"
-#include "H7terrain.h"
+#include "H7Terrain.h"
 #include "H7Object.h"
+#include "H7Assetmanager.h"
 #include "skyRendering.h"
 #include "shadowMap.h"
 #include <chrono>
 
+H7AssetManager AssetManager;
 
 float cameraSpeedMulti = 80.0f;
 glm::dvec3 cameraPos = glm::vec3(-9683.33, 15.0, 6400);
@@ -140,14 +142,19 @@ int main()
 	glm::mat4 view;
 
 	glEnable(GL_DEPTH_TEST);
+	AssetManager.add_asset(testShader2, "wheel", { "../assets/cylinder.obj" });
 
-	H7Object wheelL("../assets/cylinder.obj", true);
-	H7Object wheelR("../assets/cylinder.obj", true);
-	H7Object airplane("../assets/Fw190A5.obj", true);
-	H7Object tree("../assets/france_testmap/tree/pine.obj", true);
-	H7Object treeLOD1("../assets/france_testmap/tree/pineLOD1.obj", true);
+	H7Object wheelL(AssetManager, "wheel");
+	H7Object wheelR(AssetManager, "wheel");
+	H7Object airplane(AssetManager, testShader2, "3", { "../assets/Fw190A5.obj" }, true);
+	H7Object tree(AssetManager, testShader2, "4", {"../assets/france_testmap/tree/pine.obj"}, true);
+	H7Object treeLOD1(AssetManager, testShader2, "5", { "../assets/france_testmap/tree/pineLOD1.obj" }, true);
 
-	H7Asset pine({ "../assets/france_testmap/tree/pine.obj", "../assets/france_testmap/tree/pineLOD1.obj" });
+	H7Object pine(AssetManager, testShader2, "6", { "../assets/france_testmap/tree/pine.obj", "../assets/france_testmap/tree/pineLOD1.obj"}, true);
+
+	wheelL.setModifier(glm::scale(glm::mat4(1.0), glm::vec3(0.72, 0.72 * .2, 0.72)));
+	wheelR.setModifier(glm::scale(glm::mat4(1.0), glm::vec3(0.72, 0.72 * .2, 0.72)));
+
 
 	vector<H7Object*> models;
 	models.push_back(&wheelL);
@@ -450,14 +457,12 @@ int main()
 		if (spawn1)
 		{
 			body1->setCenterOfMassTransform(spawn1Trans);
-
 			body1->setAngularVelocity(btVector3(0, 0, 0));
 			body1->setLinearVelocity(btVector3(0, 0, 0));
-
 		}
 		if (unload)
 		{
-			airplane.Unload();
+			AssetManager.Assets[airplane.asset_id]->Unload(0);
 		}
 
 		ImGui::Text("speed: %.1f%s", body1->getLinearVelocity().length() * 3.6, "kph");
@@ -472,19 +477,13 @@ int main()
 		}
 		dynamicsWorld->stepSimulation(deltaTime, 100, 0.001);
 
-		
-		
 		btTransform testTransform2;
 		testTransform2 = dynamicsWorld->getCollisionObjectArray().at(1)->getWorldTransform();
 		myMotionState->getWorldTransform(testTransform);
-		btScalar testarr[16];
+		glm::dmat4 plane_modelmat = glm::dmat4(1.0);
+		testTransform.getOpenGLMatrix((btScalar*)&plane_modelmat);
+		plane_modelmat = glm::translate(plane_modelmat, glm::dvec3(0, 0, 2));
 
-		//testTransform.setOrigin(btVector3(0, 0, 0));
-		testTransform.getOpenGLMatrix(testarr);
-
-		glm::dmat4 plane_modelmat = btScalar2mat4(testarr) * glm::translate(glm::dmat4(1.0), glm::dvec3(0, 0, 2));
-
-		
 		
 		view = glm::lookAt(glm::vec3(0.0), cameraFront, cameraUp);
 		if (!freecam)
@@ -531,18 +530,10 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, shadowMap.depthMap);
 		
 
-		
 		myMotionState4->getWorldTransform(testTransform2);
-		testTransform2.getOpenGLMatrix(testarr);
-		plane_modelmat = btScalar2mat4(testarr);
-		plane_modelmat = glm::scale(plane_modelmat, glm::dvec3(box_scale.x, box_scale.y / 5, box_scale.z));
-		wheelR.setTransform(glm::translate(glm::dmat4(1.0), -cameraPos) * plane_modelmat);
-		
+		wheelR.setTransform(testTransform2, cameraPos);
 		myMotionState5->getWorldTransform(testTransform2);
-		testTransform2.getOpenGLMatrix(testarr);
-		plane_modelmat = btScalar2mat4(testarr);
-		plane_modelmat = glm::scale(plane_modelmat, glm::dvec3(box_scale.x, box_scale.y / 5, box_scale.z));
-		wheelL.setTransform(glm::translate(glm::dmat4(1.0), -cameraPos) * plane_modelmat);
+		wheelL.setTransform(testTransform2, cameraPos);
 
 		model = glm::translate(glm::mat4(1.0f), glm::vec3(-9683.33, 8.0, 6400) - glm::vec3(cameraPos));
 		tree.setTransform(model);
@@ -561,36 +552,28 @@ int main()
 		skyrender.shader.setMat4("projection",	projection);
 		skyrender.Draw();
 		testShader2.use();
-		airplane.Draw(testShader2);
-		wheelR.Draw(testShader2);
-		wheelL.Draw(testShader2);
+		airplane.draw(0);
+		wheelR.draw(0);
+		wheelL.draw(0);
+		
 		for (glm::dvec3 treeloc : terrain.treelocations)
 		{
 			if (glm::distance(cameraPos, treeloc) > 300)
 			{
 				glm::mat4 treemat = glm::mat4(1.0);
-				//treemat = glm::rotate(treemat, atan2(glm::vec3(treeloc-cameraPos).y, glm::vec3(treeloc - cameraPos).x), glm::vec3(0, 1, 0));
-				//treemat = glm::rotate(treemat, glm::radians(90.0f), glm::vec3(0, 1, 0));
-
 				treemat = glm::translate(treemat, glm::vec3(treeloc - cameraPos)) *glm::rotate(treemat, glm::radians(-90.f) + atan2(glm::vec3(cameraPos - treeloc).x, glm::vec3(cameraPos - treeloc).z), glm::vec3(0, 1, 0));
-				treeLOD1.setTransform(treemat); 
-				treeLOD1.Draw(testShader2);
-				//std::cout << "load state: " << (int)treeLOD1.load_state << std::endl;
-				if (treeLOD1.load_state == 2)
-				{
-					
-					testModel->Draw(testShader2);
-				}
-					
-				//	std::cout << "meshes: " << treeLOD1.model->meshes.size() << std::endl;
+				pine.setTransform(treemat); 
+				pine.drawAction(1);
 			}
 			else
 			{
-				tree.setTransform(glm::translate(glm::mat4(1.0), glm::vec3(treeloc - cameraPos)));
-				tree.Draw(testShader2);
+				pine.setTransform(glm::translate(glm::mat4(1.0), glm::vec3(treeloc - cameraPos)));
+				pine.drawAction(0);
 			}
 		}
 
+
+		AssetManager.drawInstanced();
 		terrain.tShader->use();
 		terrain.tShader->setVec3("viewPos", glm::vec3(0.0));
 		terrain.tShader->setMat4("view", view);
@@ -610,19 +593,16 @@ int main()
 		glActiveTexture(GL_TEXTURE10);
 		terrain.tShader->setInt("shadowMap", 10);
 		glBindTexture(GL_TEXTURE_2D, shadowMap.depthMap);
-		//terrain.tShader->setInt("main_albedo", 0);
-		//terrain.tShader->setInt("subtex_land", 1);
 		terrain.Draw(0);
 		terrain.Draw(1);
 		
 		
-
 		glBindVertexArray(0);
 		debugDrawer.lineShader.use();
 		debugDrawer.SetMatrices(glm::translate(view, glm::vec3(-cameraPos)), projection);
 		glBindBuffer(GL_ARRAY_BUFFER, debugVBO);
-		dynamicsWorld->debugDrawWorld();
-		debugDrawer.drawAll();
+		//dynamicsWorld->debugDrawWorld();
+		//debugDrawer.drawAll();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		glfwSwapBuffers(window);
 	}

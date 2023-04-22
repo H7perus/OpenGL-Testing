@@ -8,12 +8,12 @@ class skyRendering
 {
 public:
 	unsigned int VAO, VBO;
-	float skyarray[18] = {  -1.0, -1.0, 0.9999999,
-							 1.0, -1.0, 0.9999999,
-							-1.0,  1.0, 0.9999999,
-							 1.0, -1.0, 0.9999999,
-							 1.0,  1.0, 0.9999999,
-							-1.0,  1.0, 0.9999999 };
+	float skyarray[18] = {  -1.0, -1.0, 0.1,
+							 1.0, -1.0, 0.1,
+							-1.0,  1.0, 0.1,
+							 1.0, -1.0, 0.1,
+							 1.0,  1.0, 0.1,
+							-1.0,  1.0, 0.1 };
 
 	Shader shader = Shader("skyShader.vert", "skyShader.frag");
 	skyRendering()
@@ -31,7 +31,10 @@ public:
 		shader.use();
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBindVertexArray(VAO);
+
+		glDisable(GL_DEPTH_TEST);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glEnable(GL_DEPTH_TEST);
 	}
 	void updateSunDir(glm::vec3 sunDir)
 	{
