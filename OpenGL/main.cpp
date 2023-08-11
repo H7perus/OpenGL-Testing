@@ -71,6 +71,13 @@ static bool collisionCallback(btManifoldPoint& cp, const btCollisionObjectWrappe
 
 void renderQuad();
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+
+bool test_func()
+{
+	std::string output;
+}
+
 glm::dmat4 array2mat4(const float* array) {     // OpenGL row major
 
 	glm::dmat4 matrix;
@@ -96,8 +103,8 @@ int main()
 
 
 	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	GLFWwindow* window = glfwCreateWindow(1600, 900, "OpenGLR", NULL, NULL);
@@ -109,66 +116,73 @@ int main()
 	}
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
+	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	// Setup Platform/Renderer bindings
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 130");
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+
+
 
 	glViewport(0, 0, 1600, 900);
 
 	Shader testShader("vertexShader.vert", "debugShader.frag");
+
+	
+
 	Shader testShader2("vertexShader.vert", "fragmentShader.frag");
+	/*int maxLength = 0;
+	glGetProgramiv(testShader2.ID, GL_INFO_LOG_LENGTH, &maxLength);
+
+	std::vector<GLchar> errorLog(maxLength);
+	glGetProgramInfoLog(testShader2.ID, maxLength, &maxLength, &errorLog[0]);
+
+	for (int i = 0; i < maxLength; i++)
+	{
+		std::cout << errorLog[i];
+	}
+	std::cout << std::endl;*/
 	Shader lightShader("vertexShader.vert", "light_shader.frag");
-	Shader planeShader("debugPlaneShader.vert", "debugPlaneShader.frag");
+	Shader debugQuadShader("debugPlaneShader.vert", "debugPlaneShader.frag");
+	Shader redrawShader("redrawVShader.vert", "redrawShader.vert");
 	Shader shadowShader("lightDepthShader.vert", "empty.frag");
 	Shader treeShader("vertexShader.vert", "AlphaCullShader.frag");
 	BulletDebugDrawer_OpenGL debugDrawer;
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	testShader.use();
-
-	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	glm::mat4 projection;
-	projection = glm::perspective(glm::radians(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
-	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 cameraDirection = glm::normalize(glm::vec3(cameraPos) - cameraTarget);
-	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
-	glm::mat4 view;
-
 	glEnable(GL_DEPTH_TEST);
-	AssetManager.add_asset(testShader2, "wheel", { "../assets/cylinder.obj" });
 
+	AssetManager.add_asset(testShader2, "wheel", { "../assets/cylinder.obj" });
 	H7Object wheelL(AssetManager, "wheel");
 	H7Object wheelR(AssetManager, "wheel");
 	H7Object airplane(AssetManager, testShader2, "3", { "../assets/Fw190A5.obj" }, true);
-	H7Object tree(AssetManager, testShader2, "4", {"../assets/france_testmap/tree/pine.obj"}, true);
-	H7Object treeLOD1(AssetManager, testShader2, "5", { "../assets/france_testmap/tree/pineLOD1.obj" }, true);
+	H7Object tree(AssetManager, treeShader, "4", {"../assets/france_testmap/tree/pine.obj"}, true);
+	//H7Object treeLOD1(AssetManager, treeShader, "5", { "../assets/france_testmap/tree/pineLOD1.obj" }, true);
 
 	H7Object pine(AssetManager, testShader2, "6", { "../assets/france_testmap/tree/pine.obj", "../assets/france_testmap/tree/pineLOD1.obj"}, true);
 
 	wheelL.setModifier(glm::scale(glm::mat4(1.0), glm::vec3(0.72, 0.72 * .2, 0.72)));
 	wheelR.setModifier(glm::scale(glm::mat4(1.0), glm::vec3(0.72, 0.72 * .2, 0.72)));
 
-
-	vector<H7Object*> models;
+	vector<H7Object*> models; //right now only used for shadows.
 	models.push_back(&wheelL);
 	models.push_back(&wheelR);
-	models.push_back(&airplane);
+	models.push_back(&airplane); 
 
 
-	//std::cout << airplane.model->meshes.size() << std::endl;
+	debugQuadShader.use();
+	debugQuadShader.setInt("depthMap", 0);
 
-
-	planeShader.use();
-	planeShader.setInt("depthMap", 0);
-
-	
 	testShader2.use();
 	testShader2.setVec3("sun.ambient", glm::vec3(0.15, 0.2, 0.23));
 	testShader2.setVec3("sun.diffuse", glm::vec3(0.9, 0.85, 0.8));
@@ -176,10 +190,6 @@ int main()
 	testShader2.setVec3("sun.direction", glm::vec3(1.0, 1.0, 1.0));
 	testShader2.setFloat("material.shininess", 128.0f);
 	testShader2.setInt("shadowMap", 2);
-	
-
-	float sliderval = -15.0;
-	glm::vec3 plane_pos = glm::vec3(0.0f, -0.31f, 0.0f);
 
 	///collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
 	btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration();
@@ -201,7 +211,7 @@ int main()
 
 	const int terrain_size = 1024;
 	Shader terrainShader = Shader("vertexShader.vert", "terrainShader.frag");
-	H7terrain terrain(terrain_size, "../assets/france_testmap/heightmap.png", 0, 10, 25, &terrainShader);
+	H7Terrain terrain(terrain_size, "../assets/france_testmap/heightmap.png", 0, 10, 25, &terrainShader);
 	terrain.load_color();
 	//btHeightfieldTerrainShape* terr = new btHeightfieldTerrainShape(10, 10, testp, 10, 1, true, false);
 	gContactAddedCallback = &collisionCallback;
@@ -306,8 +316,11 @@ int main()
 		dynamicsWorld->addRigidBody(body);
 		body1 = body;
 	}
-	glm::vec3 box_scale = glm::vec3(0.72, 0.72, 0.72);
+	//body1->setCenterOfMassTransform(spawn1Trans);
+	//body1->setAngularVelocity(btVector3(0, 0, 0));
+	//body1->setLinearVelocity(btVector3(0, 0, 0));
 
+	glm::vec3 box_scale = glm::vec3(0.72, 0.72, 0.72);
 	H7WheelObject WheelR(box_scale.y / 2, box_scale.y / 15);
 	WheelR.wheelspinConstraint->enableMotor(3, true);
 	WheelR.wheelspinConstraint->setMaxMotorForce(3, 2500);
@@ -374,16 +387,6 @@ int main()
 	bool applyrotate = false;
 	bool freecam = true;
 	
-	glfwSetCursorPosCallback(window, mouse_callback);
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	// Setup Platform/Renderer bindings
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init("#version 130");
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-
 	shadowMap shadowMap(4096, &shadowShader);
 	shadowMap.models = models;
 	skyRendering skyrender;
@@ -398,38 +401,24 @@ int main()
 	terrain.tShader->setVec3("sun.direction", glm::vec3(1.0, 1.0, 1.0));
 	terrain.tShader->setFloat("material.shininess", 1.0f);
 	terrain.tShader->setInt("shadowMap", 2);
-	/*terrain.tShader->setInt("texture_diffuse1", 0);
-	terrain.tShader->setInt("texture_splat", 1);
-	terrain.tShader->setInt("texture_diffuse2", 3);
-	terrain.tShader->setInt("texture_diffuse3", 4);*/
-	//terrain.tShader->setInt("decals[0].albedo", 5);
 	terrain.tShader->setInt("numOfDecals", 1);
-	//terrain.tShader->setInt("numOfPointLights", 100);
-	for(int i = 0; i < 10; i++)
-		for (int j = 0; j < 10; j++)
-		{
-			terrain.tShader->setVec3("pointLights[" + std::to_string(i * 10 + j) + "].position", glm::vec3(0.0 + i * 10, 0.0, 0.0 + j * 10));
-			terrain.tShader->setVec3("pointLights[" + std::to_string(i * 10 + j) + "].ambient", glm::vec3(1.0f, 1.0f, 1.0f));
-			terrain.tShader->setVec3("pointLights[" + std::to_string(i * 10 + j) + "].diffuse", glm::vec3(10.0f, 10.0f, 10.0f));
-		}
-	terrain.tShader->setVec3("pointLights[0].position", glm::vec3(0.0, 0.0, 0.0));
-	terrain.tShader->setVec3("pointLights[0].ambient", glm::vec3(10.0f, 10.0f, 10.0f));
-	terrain.tShader->setVec3("pointLights[0].diffuse", glm::vec3(100.0f, 100.0f, 100.0f));
+
 	terrain.cameraPosPtr = &cameraPos;
 	glfwSwapInterval(0);
 	float af_rotation = 150;
 	bool factivate = true;
-	//body1->setCenterOfMassTransform(spawn1Trans);
-	//body1->setAngularVelocity(btVector3(0, 0, 0));
-	//body1->setLinearVelocity(btVector3(0, 0, 0));
 
 	glm::vec3 airfield_pos(-9683.33, 50.0, 6400);
 	terrain.generate_tree_locations("../assets/france_testmap/treemap.png");
 
-	Model* testModel = new Model(""); //treeLOD1.model;
 	glEnable(GL_MULTISAMPLE);
+	bool paused = false;
+	glm::mat4 view, model, projection;
+
 	while (!glfwWindowShouldClose(window))
 	{
+
+		std::cout << test_func() << std::endl;
 		glfwPollEvents();
 		processInput(window);
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -449,9 +438,24 @@ int main()
 		ImGui::SliderFloat("airfield rotation", &af_rotation, 0.0f, 360.0);
 		ImGui::Checkbox("freecam", &freecam);
 		ImGui::Checkbox("activate", &factivate);
+		ImGui::Checkbox("pause", &paused);
 		ImGui::Checkbox("lock tailwheel", &WheelTail.locked);
 		bool spawn1 = ImGui::Button("Spawn 1");
 		bool unload = ImGui::Button("unload");
+
+		if (ImGui::Button("reload Shader"))
+		{
+			testShader2 = Shader("vertexShader.vert", "fragmentShader.frag");
+			testShader2.use();
+			testShader2.setVec3("sun.ambient", glm::vec3(0.15, 0.2, 0.23));
+			testShader2.setVec3("sun.diffuse", glm::vec3(0.9, 0.85, 0.8));
+			testShader2.setVec3("sun.specular", glm::vec3(1.8, 1.5, 1.5));
+			testShader2.setVec3("sun.direction", glm::vec3(1.0, 1.0, 1.0));
+			testShader2.setFloat("material.shininess", 128.0f);
+			testShader2.setInt("shadowMap", 2);
+		}
+
+
 		WheelTail.updateWheelState();
 
 		if (spawn1)
@@ -475,7 +479,11 @@ int main()
 		{
 			body1->activate();
 		}
-		dynamicsWorld->stepSimulation(deltaTime, 100, 0.001);
+		if (!paused)
+		{
+			dynamicsWorld->stepSimulation(deltaTime, 100, 0.001);
+		}
+		
 
 		btTransform testTransform2;
 		testTransform2 = dynamicsWorld->getCollisionObjectArray().at(1)->getWorldTransform();
@@ -555,25 +563,29 @@ int main()
 		airplane.draw(0);
 		wheelR.draw(0);
 		wheelL.draw(0);
-		
+
+		auto treeStart = std::chrono::steady_clock::now();
 		for (glm::dvec3 treeloc : terrain.treelocations)
 		{
 			if (glm::distance(cameraPos, treeloc) > 300)
 			{
-				glm::mat4 treemat = glm::mat4(1.0);
-				treemat = glm::translate(treemat, glm::vec3(treeloc - cameraPos)) *glm::rotate(treemat, glm::radians(-90.f) + atan2(glm::vec3(cameraPos - treeloc).x, glm::vec3(cameraPos - treeloc).z), glm::vec3(0, 1, 0));
-				pine.setTransform(treemat); 
-				pine.drawAction(1);
+				glm::dvec4 posrot(treeloc, -1.0);
+				pine.drawActionPosRot(posrot, 1);
 			}
 			else
 			{
-				pine.setTransform(glm::translate(glm::mat4(1.0), glm::vec3(treeloc - cameraPos)));
-				pine.drawAction(0);
+				glm::dvec4 posrot(treeloc, 0.0);
+				pine.drawActionPosRot(posrot, 0);
+				//pine.drawAction(1);
 			}
 		}
+		
+		testShader.setDVec3("cameraPos", cameraPos);
+		AssetManager.drawInstancedPositions();
+		auto treeTime = std::chrono::steady_clock::now() - treeStart;
 
+		//std::cout << "time for tree calls: " << treeTime.count() / 1000000.f << std::endl;
 
-		AssetManager.drawInstanced();
 		terrain.tShader->use();
 		terrain.tShader->setVec3("viewPos", glm::vec3(0.0));
 		terrain.tShader->setMat4("view", view);

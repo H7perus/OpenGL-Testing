@@ -128,6 +128,10 @@ public:
 	{
 		glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
 	}
+	void setDVec3(const std::string& name, const glm::dvec3& value) const
+	{
+		glUniform3dv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
+	}
 };
 
 #endif

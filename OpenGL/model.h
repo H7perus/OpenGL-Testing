@@ -135,6 +135,9 @@ private:
                 vec.y = mesh->mTextureCoords[0][i].y;
                 vertex.TexCoords = vec;
                 // tangent
+                vector.x = 1.f; // mesh->mTangents[i].x;
+                vector.y = 1.f; // mesh->mTangents[i].y;
+                vector.z = 1.f; // mesh->mTangents[i].z;
                 vector.x = mesh->mTangents[i].x;
                 vector.y = mesh->mTangents[i].y;
                 vector.z = mesh->mTangents[i].z;

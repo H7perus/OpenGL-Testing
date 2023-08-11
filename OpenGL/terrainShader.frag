@@ -5,6 +5,7 @@ in VS_OUT {
     vec3 Normal;
     vec2 TexCoords;
     vec4 FragPosLightSpace;
+	vec3 tangent, bitangent;
 } fs_in;
 
 const int numOfAvailableDecals = 5;

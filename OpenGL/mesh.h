@@ -95,9 +95,15 @@ public:
                 number = std::to_string(heightNr++); // transfer unsigned int to string
             //cout << (name + number).c_str() << endl;
             // now set the sampler to the correct texture unit
-            glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
+            shader.setInt((name + number).c_str(), i);
+            //glUniform1i(glGetUniformLocation(shader.ID, (name + number).c_str()), i);
             // and finally bind the texture
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
+
+        }
+        if (normalNr == 1)
+        {
+            shader.setInt("texture_normal1", 99);
         }
     }
     void setupMesh(vector<Texture> &modelTextures)

@@ -54,6 +54,11 @@ public:
 	{
 		asset_manager_target->submitDrawAction(transformMat, asset_id, LOD_index);
 	}
+	void drawActionPosRot(glm::dvec4 posrot, int LOD_index)
+	{
+		glm::dvec3 position(posrot);
+		asset_manager_target->submitDrawActionPosition(position, posrot.w, asset_id, LOD_index);
+	}
 	void draw(int LOD_index)
 	{
 		asset_manager_target->Assets[asset_id]->Draw(LOD_index, transformMat);

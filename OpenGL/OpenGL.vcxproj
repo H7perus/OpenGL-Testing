@@ -185,7 +185,7 @@
     <ClCompile Include="H7Asset.cpp" />
     <ClCompile Include="H7AssetManager.cpp" />
     <ClCompile Include="H7Object.cpp" />
-    <ClCompile Include="H7terrain.cpp" />
+    <ClCompile Include="H7Terrain.cpp" />
     <ClCompile Include="H7TreeCollection.cpp" />
     <ClCompile Include="H7WheelObject.cpp" />
     <ClCompile Include="H7World.cpp" />
@@ -226,6 +226,8 @@
     <None Include="light_shader.frag" />
     <None Include="physicsdebug.frag" />
     <None Include="physicsdebug.vert" />
+    <None Include="redrawShader.frag" />
+    <None Include="redrawVShader.vert" />
     <None Include="skyShader.vert" />
     <None Include="skyShader.frag" />
     <None Include="terrainShader.frag" />

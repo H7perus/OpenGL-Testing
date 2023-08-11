@@ -87,26 +87,26 @@
     <ClCompile Include="..\Dependencies\include\Bullet3.24\BulletCollision\CollisionDispatch\btManifoldResult.cpp">
       <Filter>Quelldateien\physics</Filter>
     </ClCompile>
-    <ClCompile Include="H7Asset.cpp">
-      <Filter>Quelldateien\H7cpps</Filter>
+    <ClCompile Include="H7World.cpp">
+      <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
     <ClCompile Include="H7AssetManager.cpp">
-      <Filter>Quelldateien\H7cpps</Filter>
+      <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
     <ClCompile Include="H7Object.cpp">
-      <Filter>Quelldateien\H7cpps</Filter>
+      <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
-    <ClCompile Include="H7terrain.cpp">
-      <Filter>Quelldateien\H7cpps</Filter>
+    <ClCompile Include="H7Terrain.cpp">
+      <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
     <ClCompile Include="H7TreeCollection.cpp">
-      <Filter>Quelldateien\H7cpps</Filter>
+      <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
     <ClCompile Include="H7WheelObject.cpp">
-      <Filter>Quelldateien\H7cpps</Filter>
+      <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
-    <ClCompile Include="H7World.cpp">
-      <Filter>Quelldateien\H7cpps</Filter>
+    <ClCompile Include="H7Asset.cpp">
+      <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -206,6 +206,12 @@
       <Filter>Quelldateien\shaders</Filter>
     </None>
     <None Include="AlphaCullShader.frag">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="redrawShader.frag">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="redrawVShader.vert">
       <Filter>Quelldateien\shaders</Filter>
     </None>
   </ItemGroup>

@@ -7,9 +7,16 @@
 #include <glm/glm/glm.hpp>
 #include <glm/glm/gtc/matrix_transform.hpp>
 #include <glm/glm/gtc/type_ptr.hpp>
+#include "Bullet3.24/btBulletDynamicsCommon.h"
+#include "Bullet3.24/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+#include "Bullet3.24/BulletCollision/CollisionDispatch/btInternalEdgeUtility.h"
+#include "Bullet3.24/BulletCollision/CollisionShapes/btTriangleShape.h"
+
 #include "shader.h"
 #include <chrono>
 #include <vector>
+
+
 
 struct H7TerrainTile
 {
@@ -24,7 +31,7 @@ struct H7TerrainSun
 };
 
 //I need to implement configs for the maps as a replacement for hardcoding, like a JSON for example. I will continue to hardcode for a bit as I learn more.
-class H7terrain
+class H7Terrain
 {
 public:
 	double *height_data;//this will also be used for btHeightfieldTerrainShape
@@ -48,111 +55,8 @@ public:
 	unsigned int ground_texture, ground_texture2, water_texture, splat_map, airfield_decal; //this will be changed in the future, just having one texture is a pretty bad approach
 	uint16_t* height_image_data;
 	unsigned char *color_data2, *color_data3;
-	H7terrain(const int map_size_in, const char terrain_heightmap[], float min_height, float max_height, const float u_per_px_constructor, Shader *in_Shader)
-	{
-		tShader = in_Shader;
-		map_size = map_size_in;
-		width = map_size, length = map_size;
-		height_data = new double[map_size * map_size];
-		u_per_px = u_per_px_constructor;
-		height_image_data = stbi_load_16(terrain_heightmap, &width, &length, &channels, 1);
-		glGenBuffers(1, &tVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, tVBO);
-		glBufferData(GL_ARRAY_BUFFER, pow(map_size - 1, 2) * sizeof(GLfloat) * 6 * 8, NULL, GL_STATIC_DRAW);
-
-		glGenBuffers(1, &tEBO);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, pow(map_size - 1, 2) * 6 * sizeof(GLuint), NULL, GL_STATIC_DRAW);
-
-		glGenBuffers(1, &tEBOLOD1);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBOLOD1);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(GLuint), NULL, GL_STATIC_DRAW);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBOLOD1);
-
-		int indices[6] = {0, width-1, width * width-1, width * width - 1, width * width - width, 0};
-
-		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(indices), indices);
-
-		glGenVertexArrays(1, &tVAO);
-		glBindVertexArray(tVAO);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-
-
-		GLfloat data[8];
-		GLuint index[3];
-		float height_range = max_height - min_height;
-		auto time_start = std::chrono::steady_clock::now();
-		auto time_heightstart = std::chrono::steady_clock::now();
-		for (int i = 0; i < pow(map_size, 2); i++)
-		{
-			height_data[i] = float(*(height_image_data + i)) / 65535 * height_range;
-
-			if (i < pow(map_size, 2) - map_size && (i + 1) % map_size != 0)
-			{
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBO);
-				index[0] = i;
-				index[1] = i + map_size + 1;
-				index[2] = i + 1;
-				glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, EBO_size, sizeof(index), index);
-				index[2] = i + map_size;
-				glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, EBO_size + 3 * sizeof(GLuint), sizeof(index), index);
-				EBO_size += 2 * sizeof(index);
-			}
-			//glGetBufferSubData(GL_ARRAY_BUFFER, index[1] * sizeof(data), sizeof(data), data);
-			//std::cout << data[0] << " " << data[1] << " " << data[2] << std::endl;
-		}
-		auto time_height = std::chrono::steady_clock::now() - time_heightstart;
-		std::cout << "total time for map height generation: " << (float)time_height.count() / 1000000000 << std::endl;
-
-		//std::cout << pow(map_size, 2) - map_size << std::endl;
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tEBO);
-		glGetBufferSubData(GL_ARRAY_BUFFER, 8 * 4, sizeof(data), data);
-		//std::cout << data[3] << " " << data[4] << " " << data[5] << std::endl;
-
-		auto time_generationstart = std::chrono::steady_clock::now();
-		for (int i = 0; i < pow(map_size, 2); i++)
-		{
-			get_vertdata(data, i);
-			get_vertnormal(data, i);
-			glBufferSubData(GL_ARRAY_BUFFER, i * sizeof(data), sizeof(data), data);
-		}
-		auto time_gen = std::chrono::steady_clock::now() - time_heightstart;
-		std::cout << "total time for map mesh generation: " << (float)time_gen.count() / 1000000000 << std::endl;
-		std::cout << "total time: " << (float)(time_gen + time_height).count() / 1000000000 << std::endl;
-		GLfloat face_data[24];
-	};
-	void load_color()
-	{
-		tShader->use(); //I am an idiot, forgot this and was chasing texture assign bugs
-		add_texture("../assets/france_testmap/colormap.png", "main_albedo");
-		add_texture("../assets/france_testmap/forestground_albedo.png", "subtex_land");
-		add_texture("../assets/france_testmap/water1.png", "subtex_water");
-
-		glGenTextures(1, &splat_map);
-		glBindTexture(GL_TEXTURE_2D, splat_map);
-		if (height_image_data)
-		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_R16, width, length, 0, GL_RED, GL_UNSIGNED_SHORT, height_image_data);
-			glGenerateMipmap(GL_TEXTURE_2D);
-		}
-		else
-		{
-			std::cout << "Failed to load texture (splat)" << std::endl;
-		}
-		stbi_image_free(color_data2);
-		tShader->setInt("splatMap", textures.size());
-		textures.push_back(splat_map);
-		stbi_image_free(height_image_data);
-
-		add_decal("../assets/france_testmap/airfield_decal2.png");
-
-		tShader->setInt("subtex_land", 1);
-	}
+	H7Terrain(const int map_size_in, const char terrain_heightmap[], float min_height, float max_height, const float u_per_px_constructor, Shader* in_Shader);
+	void load_color();
 	void add_decal(const char decal_albedo_path[])
 	{
 		unsigned char* color_data;
@@ -248,7 +152,7 @@ public:
 	}
 	void generate_tree_locations(const char texture_path[])
 	{
-		int tree_density = 40;
+		int tree_density = 100;
 		int t_width, t_height, t_channels;
 		stbi_set_flip_vertically_on_load(false);
 		uint8_t* treedata = (uint8_t*)(stbi_load(texture_path, &t_width, &t_height, &t_channels, 1));
