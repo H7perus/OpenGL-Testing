@@ -41,5 +41,10 @@ public:
 		shader.use();
 		shader.setVec3("sunDir", sunDir);
 	}
+	void updateSunColor(glm::vec3 sunCol)
+	{
+		shader.use();
+		shader.setVec3("sunColor", sunCol);
+	}
 };
 

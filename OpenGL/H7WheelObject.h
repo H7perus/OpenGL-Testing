@@ -15,7 +15,7 @@ public:
 	btDefaultMotionState* myMotionState2;
 	btDefaultMotionState* myMotionStateWheel;
 
-	H7WheelObject(float wheel_radius, float wheel_thickness, float rotation_offset = 0, float rotation_angle = 0, bool rotating = false, bool lockable = false)
+	H7WheelObject(float wheel_radius, float wheel_thickness, float rotation_offset = 0, float rotation_angle = 0, bool rotating = false, bool lockable = false) //rotating == swivelling, rename soonTM
 	{
 		btVector3 localInertia(0, 0, 0);
 		btVector3 localInertia2(0, 0, 0);

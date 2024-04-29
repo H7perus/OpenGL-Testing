@@ -179,6 +179,17 @@ void main()
 
 	result += calcDirLight(sun);
 	
-	//result = texture_ground;
+
+
+
+
+
+
+	//result = fs_in.TexCoords.xyy;
+
+
+
+
+	result = texture_ground;
 	FragColor = vec4(result, 1.0);
 }

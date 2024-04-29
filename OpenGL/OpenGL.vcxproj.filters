@@ -96,7 +96,7 @@
     <ClCompile Include="H7Object.cpp">
       <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
-    <ClCompile Include="H7Terrain.cpp">
+    <ClCompile Include="H7TerrainTile.cpp">
       <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
     <ClCompile Include="H7TreeCollection.cpp">
@@ -106,6 +106,9 @@
       <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
     <ClCompile Include="H7Asset.cpp">
+      <Filter>Headerdateien\H7headers</Filter>
+    </ClCompile>
+    <ClCompile Include="H7Aircraft.cpp">
       <Filter>Headerdateien\H7headers</Filter>
     </ClCompile>
   </ItemGroup>
@@ -152,7 +155,7 @@
     <ClInclude Include="H7Object.h">
       <Filter>Headerdateien\H7headers</Filter>
     </ClInclude>
-    <ClInclude Include="H7Terrain.h">
+    <ClInclude Include="H7TerrainTile.h">
       <Filter>Headerdateien\H7headers</Filter>
     </ClInclude>
     <ClInclude Include="H7TreeCollection.h">
@@ -162,6 +165,12 @@
       <Filter>Headerdateien\H7headers</Filter>
     </ClInclude>
     <ClInclude Include="H7World.h">
+      <Filter>Headerdateien\H7headers</Filter>
+    </ClInclude>
+    <ClInclude Include="H7Aircraft.h">
+      <Filter>Headerdateien\H7headers</Filter>
+    </ClInclude>
+    <ClInclude Include="H7cloudnoiseutil.h">
       <Filter>Headerdateien\H7headers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -202,17 +211,23 @@
     <None Include="debugPlaneShader.frag">
       <Filter>Quelldateien\shaders</Filter>
     </None>
-    <None Include="terrainShader.frag">
+    <None Include="AlphaCullShader.frag">
       <Filter>Quelldateien\shaders</Filter>
     </None>
-    <None Include="AlphaCullShader.frag">
+    <None Include="redrawVShader.vert">
+      <Filter>Quelldateien\shaders</Filter>
+    </None>
+    <None Include="cloudShader.frag">
       <Filter>Quelldateien\shaders</Filter>
     </None>
     <None Include="redrawShader.frag">
       <Filter>Quelldateien\shaders</Filter>
     </None>
-    <None Include="redrawVShader.vert">
-      <Filter>Quelldateien\shaders</Filter>
+    <None Include="vertexTerrainShader.vert">
+      <Filter>Quelldateien\shaders\terrainShader</Filter>
+    </None>
+    <None Include="terrainShader.frag">
+      <Filter>Quelldateien\shaders\terrainShader</Filter>
     </None>
   </ItemGroup>
 </Project>

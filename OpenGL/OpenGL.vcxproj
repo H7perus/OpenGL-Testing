@@ -119,6 +119,7 @@
       </FunctionLevelLinking>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <AdditionalOptions>/D "BT_USE_DOUBLE_PRECISION" %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -159,6 +160,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\include;%(AdditionalIncludeDirectories);$(SolutionDir)Dependencies\include\Bullet3.24;$(SolutionDir)Dependencies\include\imgui-1.89.1</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalOptions>/D "BT_USE_DOUBLE_PRECISION" %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -182,10 +184,11 @@
     <ClCompile Include="..\Dependencies\include\imgui-1.89.1\imgui_widgets.cpp" />
     <ClCompile Include="..\Dependencies\src\glad.c" />
     <ClCompile Include="fwAircraft.cpp" />
+    <ClCompile Include="H7Aircraft.cpp" />
     <ClCompile Include="H7Asset.cpp" />
     <ClCompile Include="H7AssetManager.cpp" />
     <ClCompile Include="H7Object.cpp" />
-    <ClCompile Include="H7Terrain.cpp" />
+    <ClCompile Include="H7TerrainTile.cpp" />
     <ClCompile Include="H7TreeCollection.cpp" />
     <ClCompile Include="H7WheelObject.cpp" />
     <ClCompile Include="H7World.cpp" />
@@ -200,10 +203,12 @@
     <ClInclude Include="debugdraw.h" />
     <ClInclude Include="flightModel.h" />
     <ClInclude Include="fwAircraft.h" />
+    <ClInclude Include="H7Aircraft.h" />
     <ClInclude Include="H7Asset.h" />
     <ClInclude Include="H7AssetManager.h" />
+    <ClInclude Include="H7cloudnoiseutil.h" />
     <ClInclude Include="H7Object.h" />
-    <ClInclude Include="H7Terrain.h" />
+    <ClInclude Include="H7TerrainTile.h" />
     <ClInclude Include="H7TreeCollection.h" />
     <ClInclude Include="H7WheelObject.h" />
     <ClInclude Include="H7World.h" />
@@ -218,6 +223,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="AlphaCullShader.frag" />
+    <None Include="cloudShader.frag" />
     <None Include="debugPlaneShader.frag" />
     <None Include="debugPlaneShader.vert" />
     <None Include="debugShader.frag" />
@@ -238,6 +244,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <FileType>Document</FileType>
     </None>
+    <None Include="vertexTerrainShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragmentShader.frag" />

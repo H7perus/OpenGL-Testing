@@ -136,6 +136,7 @@ vec3 calcDirLight(dirLight light)
 	return (diffuse + specular) * (1.0 - shadowCalculation(fs_in.FragPosLightSpace)) + ambient;
 }
 
+
 uniform sampler2D albedo0;
 uniform sampler2D albedo1;
 
@@ -164,8 +165,10 @@ void main()
 	//result = texture(texture_diffuse1, fs_in.TexCoords).rgb;
 	//result = Normal;
 	FragColor = vec4(result, 1.0);
+	//FragColor = skyColor(sun, fs_in.FragPos- viewPos );
 	//FragColor = vec4(fs_in.tangent / 2 + 0.5, 1.0);
 	//FragColor = vec4(1.0);
 	//FragColor = mix(texture(albedo, TexCoords), texture(specular, TexCoords), 0.5);
 	//FragColor = vec4(ambient, 0);
 }
+
