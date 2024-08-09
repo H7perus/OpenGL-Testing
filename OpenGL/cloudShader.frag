@@ -134,6 +134,8 @@ void main()
 
 	pixel_pos = mat3(inverse(viewMat)) * vec3((gl_FragCoord.x - (screensize.x / 2 -0.5)) * inv_focal_len, (gl_FragCoord.y - (screensize.y / 2 - 0.5)) * inv_focal_len, -1) * pixelDepth;
 	// why the heck does this work, why do I need negative focal length?
+	pixelDepth = length(pixel_pos); //needed!
+
 
 	lray.direction =  normalize(pixel_pos);
 
@@ -296,7 +298,7 @@ float densityFunction(vec3 loc) //don't forget this shit can return negative num
 	float invWorleyNoise3 = (texture(detailWorleyTexture, noiseLoc).b - 1);
 	bool testbool2 = true;
 
-	float extra_detail = float(testbool2) * 0.1 * (0.6 * invWorleyNoise + 0.5 * invWorleyNoise1 +  0.9 * invWorleyNoise2 + 0.4 * invWorleyNoise3);
+	float extra_detail = float(testbool2) * 0.1 * (0.6 * invWorleyNoise + 0.5 * invWorleyNoise1 +  0.9 * invWorleyNoise2 + 0.0 * invWorleyNoise3); //  + 
 
 	result = clamp(pushOut(preliminary_density, 1)  + extra_detail  - altitude_gradient, 0.0, 0.9);
 	result = pushOut(result, 1);

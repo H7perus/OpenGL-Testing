@@ -224,6 +224,7 @@
   <ItemGroup>
     <None Include="AlphaCullShader.frag" />
     <None Include="cloudShader.frag" />
+    <None Include="cloudShader2.frag" />
     <None Include="debugPlaneShader.frag" />
     <None Include="debugPlaneShader.vert" />
     <None Include="debugShader.frag" />

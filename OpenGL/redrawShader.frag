@@ -37,7 +37,8 @@ void main()
 //	
 //	
 	//FragColor.rgb = texture(redraw_texture1, TexCoord).rgb * (1 - blurredColor.a) +  blurredColor.rgb * blurredColor.a;
-	FragColor.rgb = texture(redraw_texture1, TexCoord).rgb * (1 - texture(redraw_texture2, TexCoord).a) +  texture(redraw_texture2, TexCoord).rgb * (texture(redraw_texture2, TexCoord).a);
+	FragColor.rgb = texture(redraw_texture1, TexCoord).rgb * (1 - texture(redraw_texture2, TexCoord).a)  +  texture(redraw_texture2, TexCoord).rgb; // +  texture(redraw_texture2, TexCoord).rgb * (texture(redraw_texture2, TexCoord).a);
+	//FragColor.rgb = vec3(0.9) * (1 - texture(redraw_texture2, TexCoord).a)  +  texture(redraw_texture2, TexCoord).rgb; // +  texture(redraw_texture2, TexCoord).rgb * (texture(redraw_texture2, TexCoord).a);
 
 	//FragColor.rgb = pow(FragColor.rgb, vec3(1.0 / 2.2));
 	FragColor = pow(FragColor, vec4(1 / 2.2));

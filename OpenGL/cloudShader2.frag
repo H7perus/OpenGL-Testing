@@ -169,14 +169,15 @@ void main()
 	float final_alpha = 1.0;
 	
 
-	vec3 smokeColor = vec3(0.999, 0.999, 0.999);
+	vec3 smokeColor = vec3(0.9999, 0.9999, 0.9999);
 	smokeColor = vec3(1.0);
 
 	float densityCounter = 0.0;
 
 
 	vec3 resultColor = vec3(0);
-	float unscattered_left = 1.1; //1.1 for a little trick later on //NEEDS FIXING, BRIGHTNESS NOT ADJUSTED
+	float unscattered_left = 1.0; //1.1 for a little trick later on //NEEDS FIXING, BRIGHTNESS NOT ADJUSTED
+	//unscattered_left = 1.0;
 	int accuracy = 5000;
 	float step_size = 1.f / accuracy;
 
@@ -219,39 +220,43 @@ void main()
 			for(int j = 1; j <= light_accuracy; j++)
 			{
 				float light_transmittance;
-				light_transmittance = densityFunction(loc + sunDir * light_sample_length * j,  light_sample_length * u_lightAbsorptionMultiplier * u_cloudDensityMultiplier);
+				light_transmittance = densityFunction(loc + sunDir * light_sample_length * j,  light_sample_length * u_lightAbsorptionMultiplier * 1 * u_cloudDensityMultiplier);
 
 				if(light_transmittance < 1)
 					total_brightness *= (light_transmittance);
 			}
 
-			//lightlevel += sunDiffuse * total_brightness * vec3(phaseFunction(acos(dot(lray.direction, sunDir)), u_scatterFactor));
+			lightlevel += sunDiffuse * total_brightness * vec3(phaseFunction(acos(dot(lray.direction, sunDir)), u_scatterFactor));
 			
-			lightlevel += sunDiffuse * total_brightness * vec3(phaseFunction(acos(dot(lray.direction, sunDir)), pow(u_scatterFactor, 1 / total_brightness)));  
+			//lightlevel += sunDiffuse * total_brightness * vec3(phaseFunction(acos(dot(lray.direction, sunDir)), pow(u_scatterFactor, 1 / total_brightness)));  
 
-			unscattered_left *=  (1 - local_density);
-			vec3 prelimColor = smokeColor * lightlevel * unscattered_left * local_density * 0.5; //  * (1 - pow(unscattered_left, 2));
-			resultColor += prelimColor; //mix(prelimColor, vec3(skyColor(lray.direction)) * unscattered_left, pow(0.99998, total_distance));
 			
 
-			final_alpha *= ( 1 - pow(1 - unscattered_left, 2));
+			unscattered_left *=  pow(1 - local_density, 1);
 
+			float l_unscattered_left = unscattered_left - 0.1;
+			l_unscattered_left = unscattered_left;
+			float beer_powder_strength = unscattered_left * (1 - pow(unscattered_left, 2));
+			//float beer_powder_strength = unscattered_left;
+			//final_alpha = unscattered_left * pow(unscattered_left - 0.1, 2);
 
+			vec3 prelimColor = smokeColor * lightlevel * l_unscattered_left * local_density * beer_powder_strength * 0.2 * base_sample_length;
+			//vec3 prelimColor = vec3(0.1) * unscattered_left * local_density;
+			//vec3 prelimColor = vec3(0.1);
+			resultColor += prelimColor;
+
+			final_alpha = unscattered_left; // - 0.1;
 			atmospheric_weight *= 1 - (1 - pow(atmos_const, total_distance - previous_dist)) * unscattered_left;
 			previous_dist = total_distance;
 		}
-//		if(local_density  == -1)
-//		{
-//			//rough = true;
-//			//total_distance += sample_length * 9;
-//		}
+
 		
 		//sample_length = base_sample_length / unscattered_left; //this slows down the code by 20% despite dynamically changing the sample depth to get bigger once total transmission goes down :upside_down:
 		total_distance += sample_length;
-		if(unscattered_left <= 0.1)
+		if(unscattered_left <= 0.01)
 		{
 			raymarch = false;
-			unscattered_left = 0.0;
+			//unscattered_left = 0.0;
 		}
 		//if(total_distance > max_distance)
 			//raymarch = false;
@@ -268,7 +273,7 @@ void main()
 	total_blockage = unscattered_left;
 
 	resultColor *= 1;
-	resultColor = clamp(resultColor, vec3(0.0), vec3(1.0));
+	//resultColor = clamp(resultColor, vec3(0.0), vec3(1.0));
 
 	
 	//total_blockage = 1 - total_blockage;
@@ -283,12 +288,17 @@ void main()
 
 	//total_blockage = (pow(total_blockage, 2));
 
-
-
-
-
 	FragColor.rgb = clamp(resultColor / (1 - pow(unscattered_left, 2)), vec3(0.0), vec3(1.0));
-	FragColor.a = (1 - total_blockage);
+
+
+	FragColor.a = pow(1 - final_alpha, 1);
+	//FragColor.a = 1;
+	//FragColor.rgb = vec3(0.1 / resultColor);
+	//FragColor.a = (1 - total_blockage);
+
+	//FragColor.rgb = FragColor.aaa;
+	
+	//FragColor.rgb = FragColor.aaa;
 	//FragColor.a = 0;
 	
 	//FragColor.rgb = mix(vec3(skyColor(lray.direction)), FragColor.rgb, atmospheric_weight);
@@ -355,7 +365,7 @@ float densityFunction(vec3 loc, float weightFactor)
 float phaseFunction(float angle, float scatterFactor)
 {
 	float result = 1.0;
-	return result;
+	//return result;
 	result = (1 - pow(scatterFactor, 2)) / (4* PI * pow(1 + pow(scatterFactor, 2) - 2 * scatterFactor * cos(angle), 1.5));
 	result += 0.8;
 	//result += ( (3.f / 16.f) * PI ) * ( 1 + pow(cos(angle), 2));

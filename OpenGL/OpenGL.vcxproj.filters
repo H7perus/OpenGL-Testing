@@ -229,5 +229,6 @@
     <None Include="terrainShader.frag">
       <Filter>Quelldateien\shaders\terrainShader</Filter>
     </None>
+    <None Include="cloudShader2.frag" />
   </ItemGroup>
 </Project>
