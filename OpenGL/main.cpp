@@ -142,7 +142,13 @@ int main()
 
 	Shader testShader("vertexShader.vert", "debugShader.frag");
 	Shader testShader2("vertexShader.vert", "fragmentShader.frag");
-	/*int maxLength = 0;
+	
+	Shader lightShader("vertexShader.vert", "light_shader.frag");
+	Shader debugQuadShader("debugPlaneShader.vert", "debugPlaneShader.frag");
+	Shader redrawShader("redrawVShader.vert", "redrawShader.frag");
+	Shader cloudShader("redrawVShader.vert", "cloudShader.frag");
+
+	int maxLength = 0;
 	glGetProgramiv(testShader2.ID, GL_INFO_LOG_LENGTH, &maxLength);
 
 	std::vector<GLchar> errorLog(maxLength);
@@ -152,11 +158,8 @@ int main()
 	{
 		std::cout << errorLog[i];
 	}
-	std::cout << std::endl;*/
-	Shader lightShader("vertexShader.vert", "light_shader.frag");
-	Shader debugQuadShader("debugPlaneShader.vert", "debugPlaneShader.frag");
-	Shader redrawShader("redrawVShader.vert", "redrawShader.frag");
-	Shader cloudShader("redrawVShader.vert", "cloudShader.frag");
+	std::cout << std::endl;
+
 
 	Shader shadowShader("lightDepthShader.vert", "empty.frag");
 	Shader treeShader("vertexShader.vert", "AlphaCullShader.frag");
@@ -468,7 +471,7 @@ int main()
 		ImGui::NewFrame();
 		ImGui::Begin("Demo window");
 		ImGui::Checkbox("apply force", &applyforce);
-		ImGui::SliderFloat("movementspeed", &cameraSpeedMulti, 0.0f, 1000.0);
+		ImGui::SliderFloat("movementspeed", &cameraSpeedMulti, 0.0f, 5000.0);
 		ImGui::SliderFloat("airfield rotation", &af_rotation, 0.0f, 360.0);
 		ImGui::Checkbox("freecam", &freecam);
 		ImGui::Checkbox("activate", &factivate);
@@ -491,6 +494,9 @@ int main()
 			cloudShader = Shader("redrawVShader.vert", "cloudShader.frag");
 			terrainShader = Shader("vertexTerrainShader.vert", "terrainShader.frag");
 			skyrender = skyRendering();
+			skyrender.updateSunDir(sunDirection);
+
+			skyrender.updateSunColor(sunDiffuse);
 		}
 		
 
@@ -551,10 +557,8 @@ int main()
 
 			cloudShader.use();
 			cloudShader.setMat3("rotMat", glm::mat3(glm::normalize(glm::cross(plane_up, plane_front)), plane_up, plane_front));
-
-
 		}
-
+		
 		plane_modelmat = glm::translate(glm::dmat4(1.0), -cameraPos) * plane_modelmat;
 		//body1->activate();
 		Fw190.runFlightModel();
@@ -620,12 +624,12 @@ int main()
 			if (glm::distance(cameraPos, treeloc) > 300)
 			{
 				glm::dvec4 posrot(treeloc, -1.0);
-				pine.drawActionPosRot(posrot, 1);
+				//pine.drawActionPosRot(posrot, 1);
 			}
 			else
 			{
 				glm::dvec4 posrot(treeloc, 0.0);
-				pine.drawActionPosRot(posrot, 0);
+				//pine.drawActionPosRot(posrot, 0);
 			}
 		}
 		testShader.setDVec3("cameraPos", cameraPos);
@@ -664,8 +668,8 @@ int main()
 			cloudShader.setMat3("rotMat", glm::mat3(glm::normalize(glm::cross(cameraUp, cameraFront)), glm::cross(cameraFront, glm::normalize(glm::cross(cameraUp, cameraFront))), cameraFront));
 
 		glm::mat3 rotMat = glm::mat3(glm::normalize(glm::cross(cameraUp, cameraFront)), cameraUp, cameraFront);
-		std::cout << (rotMat * glm::vec3(0, 0, 1)).x << " " << (rotMat * glm::vec3(0, 0, 1)).y << " " << (rotMat * glm::vec3(0, 0, 1)).z << std::endl;
-		std::cout << cameraUp.x << " " << cameraUp.y << " " << cameraUp.z << std::endl;
+		//std::cout << (rotMat * glm::vec3(0, 0, 1)).x << " " << (rotMat * glm::vec3(0, 0, 1)).y << " " << (rotMat * glm::vec3(0, 0, 1)).z << std::endl;
+		//std::cout << cameraUp.x << " " << cameraUp.y << " " << cameraUp.z << std::endl;
 		cloudShader.setVec3("cameraPos", cameraPos);
 
 

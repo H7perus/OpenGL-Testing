@@ -191,5 +191,6 @@ void main()
 
 
 	result = texture_ground;
+	result = vec3(0.5);
 	FragColor = vec4(result, 1.0);
 }
